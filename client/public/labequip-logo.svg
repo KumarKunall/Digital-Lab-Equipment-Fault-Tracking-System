@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 80" width="520" height="80">
+  <defs>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&amp;display=swap');
+      .brand-lab { font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif; font-weight: 800; font-size: 38px; fill: #172033; letter-spacing: -0.5px; }
+      .brand-equip { font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif; font-weight: 800; font-size: 38px; fill: #087A35; letter-spacing: -0.5px; }
+      .brand-tagline { font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif; font-weight: 500; font-size: 13.5px; fill: #1E293B; letter-spacing: 0.1px; }
+    </style>
+  </defs>
+
+  <!-- Laboratory Flask Symbol -->
+  <g transform="translate(10, 8)">
+    <!-- Flask lip -->
+    <rect x="18" y="4" width="20" height="4.5" rx="2.2" fill="#087A35" />
+    <!-- Flask outline -->
+    <path d="M22 8.5 V21 L7 53.5 C5.2 57.5 8 62 12.5 62 H43.5 C48 62 50.8 57.5 49 53.5 L34 21 V8.5" fill="none" stroke="#087A35" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round" />
+    <!-- Liquid fill -->
+    <path d="M12.5 45 Q28 41 43.5 45 L45 56 C44.5 58 43 59 40 59 H16 C13 59 11.5 58 11 56 Z" fill="#DDF2E3" stroke="#087A35" stroke-width="4" stroke-linejoin="round" />
+    <!-- Bubbles -->
+    <circle cx="21" cy="38" r="2.5" fill="#087A35" />
+    <circle cx="29" cy="32" r="1.8" fill="#087A35" />
+    <circle cx="34" cy="40" r="1.4" fill="#087A35" />
+  </g>
+
+  <!-- Wordmark "LabEquip" -->
+  <text x="76" y="52" class="brand-lab">Lab<tspan class="brand-equip">Equip</tspan></text>
+
+  <!-- Vertical separator line -->
+  <line x1="262" y1="18" x2="262" y2="62" stroke="#CBD5E1" stroke-width="1.8" stroke-linecap="round" />
+
+  <!-- Tagline -->
+  <text x="278" y="37" class="brand-tagline">Local Lab Equipment Calibration</text>
+  <text x="278" y="55" class="brand-tagline">&amp; Fault Tracking System</text>
+</svg>

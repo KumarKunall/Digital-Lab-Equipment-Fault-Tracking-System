@@ -9,28 +9,28 @@ export const OperationalStatusBadge = ({ status }) => {
   switch (status) {
     case 'Ready to Use':
       return (
-        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
-          <CheckCircle2 className="w-3.5 h-3.5" />
+        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-[#EAF5ED] text-[#087A35] border border-[#BDE3CA]">
+          <CheckCircle2 className="w-3.5 h-3.5 shrink-0 text-[#087A35]" />
           Ready to Use
         </span>
       );
     case 'Under Repair':
       return (
-        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-500/10 text-amber-400 border border-amber-500/30">
-          <Wrench className="w-3.5 h-3.5" />
+        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200">
+          <Wrench className="w-3.5 h-3.5 shrink-0 text-amber-600" />
           Under Repair
         </span>
       );
     case 'Damaged':
       return (
-        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-rose-500/10 text-rose-400 border border-rose-500/30">
-          <AlertCircle className="w-3.5 h-3.5" />
+        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-red-50 text-red-700 border border-red-200">
+          <AlertCircle className="w-3.5 h-3.5 shrink-0 text-red-600" />
           Damaged
         </span>
       );
     default:
       return (
-        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-slate-800 text-slate-300 border border-white/10">
+        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-700 border border-slate-200">
           {status || 'Unknown'}
         </span>
       );
@@ -42,33 +42,36 @@ export const OperationalStatusBadge = ({ status }) => {
  * Values: 'Valid' | 'Due Soon' | 'Overdue'
  */
 export const CalibrationStatusBadge = ({ status, daysRemaining }) => {
-  let displayDays = daysRemaining !== undefined ? ` (${daysRemaining < 0 ? `${Math.abs(daysRemaining)}d overdue` : daysRemaining === 0 ? 'Today' : `${daysRemaining}d left`})` : '';
+  let displayDays =
+    daysRemaining !== undefined
+      ? ` (${daysRemaining < 0 ? `${Math.abs(daysRemaining)}d overdue` : daysRemaining === 0 ? 'Today' : `${daysRemaining}d left`})`
+      : '';
 
   switch (status) {
     case 'Valid':
       return (
-        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-cyan-500/10 text-cyan-400 border border-cyan-500/30">
-          <CheckCircle2 className="w-3.5 h-3.5" />
+        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-[#EAF5ED] text-[#087A35] border border-[#BDE3CA]">
+          <CheckCircle2 className="w-3.5 h-3.5 shrink-0 text-[#087A35]" />
           Valid{displayDays}
         </span>
       );
     case 'Due Soon':
       return (
-        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-500/10 text-amber-400 border border-amber-500/30">
-          <Clock className="w-3.5 h-3.5" />
+        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200">
+          <Clock className="w-3.5 h-3.5 shrink-0 text-amber-600" />
           Due Soon{displayDays}
         </span>
       );
     case 'Overdue':
       return (
-        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-rose-500/10 text-rose-400 border border-rose-500/30">
-          <AlertTriangle className="w-3.5 h-3.5" />
+        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-red-50 text-red-700 border border-red-200">
+          <AlertTriangle className="w-3.5 h-3.5 shrink-0 text-red-600" />
           Overdue{displayDays}
         </span>
       );
     default:
       return (
-        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-slate-800 text-slate-300 border border-white/10">
+        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-700 border border-slate-200">
           {status || 'Not Set'}
         </span>
       );
@@ -77,41 +80,47 @@ export const CalibrationStatusBadge = ({ status, daysRemaining }) => {
 
 /**
  * Ticket Status Badge
- * Values: 'Open' | 'Under Review' | 'In Repair' | 'Resolved'
+ * Values: 'Open' | 'Under Review' | 'In Repair' | 'Resolved' | 'Expired'
  */
 export const TicketStatusBadge = ({ status }) => {
   switch (status) {
     case 'Open':
       return (
-        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-blue-500/10 text-blue-400 border border-blue-500/30">
-          <AlertCircle className="w-3.5 h-3.5" />
+        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-red-50 text-red-700 border border-red-200">
+          <AlertCircle className="w-3.5 h-3.5 shrink-0 text-red-600" />
           Open
         </span>
       );
     case 'Under Review':
       return (
-        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-purple-500/10 text-purple-400 border border-purple-500/30">
-          <Clock className="w-3.5 h-3.5" />
+        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200">
+          <Clock className="w-3.5 h-3.5 shrink-0 text-amber-600" />
           Under Review
         </span>
       );
     case 'In Repair':
       return (
-        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-500/10 text-amber-400 border border-amber-500/30">
-          <Wrench className="w-3.5 h-3.5" />
+        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200">
+          <Wrench className="w-3.5 h-3.5 shrink-0 text-blue-600" />
           In Repair
         </span>
       );
     case 'Resolved':
       return (
-        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
-          <CheckCircle2 className="w-3.5 h-3.5" />
+        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-[#EAF5ED] text-[#087A35] border border-[#BDE3CA]">
+          <CheckCircle2 className="w-3.5 h-3.5 shrink-0 text-[#087A35]" />
           Resolved
+        </span>
+      );
+    case 'Expired':
+      return (
+        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-600 border border-slate-200">
+          Expired
         </span>
       );
     default:
       return (
-        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-slate-800 text-slate-300 border border-white/10">
+        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-700 border border-slate-200">
           {status || 'Unknown'}
         </span>
       );
