@@ -12,7 +12,6 @@ import {
   FlaskConical,
   Layers3,
   Menu,
-  MessageSquareHeart,
   QrCode,
   ScanLine,
   ShieldCheck,
@@ -21,38 +20,47 @@ import {
   X,
   GraduationCap,
   HelpCircle,
+  Zap,
+  Users,
+  Tag,
+  RefreshCw,
 } from "lucide-react";
 
-import "../styles/LandingPage.css";
+import "../styles/HomePage.css";
 
+/* ─── Static Data ─── */
 const features = [
   {
+    num: "01",
     icon: Layers3,
     title: "Centralized Equipment Inventory",
     description:
       "Maintain organized records of laboratory instruments, serial numbers, locations, operational conditions, and equipment history.",
-    color: "blue",
+    color: "hp-fi-blue",
   },
   {
+    num: "02",
     icon: QrCode,
     title: "Smart QR Identification",
     description:
       "Generate a unique QR code for every instrument. Scan it using Google Lens or a mobile camera to instantly open its equipment profile.",
-    color: "cyan",
+    color: "hp-fi-cyan",
   },
   {
+    num: "03",
     icon: CalendarClock,
     title: "Calibration Management",
     description:
       "Monitor last calibration dates, upcoming due dates, overdue equipment, and preserve every completed calibration record.",
-    color: "violet",
+    color: "hp-fi-violet",
   },
   {
+    num: "04",
     icon: ClipboardCheck,
     title: "Digital Fault Tracking",
     description:
       "Allow students to report damaged instruments with photographs and help assistants manage the complete repair lifecycle.",
-    color: "emerald",
+    color: "hp-fi-emerald",
   },
 ];
 
@@ -94,7 +102,7 @@ const portals = [
     description:
       "Manage laboratories, archive and restore labs, create Lab Assistant accounts, and monitor global read-only reports.",
     icon: ShieldCheck,
-    accent: "blue",
+    accent: "hp-portal-blue",
     action: "Access Admin Portal",
     to: "/login?role=Admin",
     points: [
@@ -110,7 +118,7 @@ const portals = [
     description:
       "Manage assigned laboratory equipment, generate QR labels, maintain calibration records, and resolve fault tickets.",
     icon: Wrench,
-    accent: "emerald",
+    accent: "hp-portal-green",
     action: "Access Assistant Portal",
     to: "/login?role=Assistant",
     points: [
@@ -126,7 +134,7 @@ const portals = [
     description:
       "Scan equipment QR codes to report faults with photographs. Automatically receive login credentials and track all your tickets.",
     icon: GraduationCap,
-    accent: "violet",
+    accent: "hp-portal-violet",
     action: "Login as Student",
     to: "/login?role=Student",
     points: [
@@ -171,581 +179,470 @@ const faqs = [
   },
 ];
 
+/* ─── Component ─── */
 const HomePage = () => {
   const [menuOpen, setMenuOpen] = useState(false);
   const [openFaq, setOpenFaq] = useState(null);
 
-  const toggleFaq = (index) => {
-    setOpenFaq(openFaq === index ? null : index);
-  };
-
+  const toggleFaq = (i) => setOpenFaq(openFaq === i ? null : i);
   const closeMenu = () => setMenuOpen(false);
 
   return (
-    <div className="lp-container">
-      {/* Background Decor */}
-      <div className="lp-ambient-light" />
-      <div className="lp-grid-overlay" />
+    <div className="hp-root">
 
-      {/* Header */}
-      <header className="sticky top-0 z-50 backdrop-blur-xl border-b border-white/[0.08] bg-[#070d1d]/80">
-        <div className="max-w-7xl mx-auto px-5 sm:px-8">
-          <div className="flex items-center justify-between h-20">
-            {/* Logo */}
-            <Link to="/" className="flex items-center gap-3 group">
-              <div className="lp-logo">
-                <FlaskConical size={22} />
+      {/* ── Animated Background ── */}
+      <div className="hp-bg" aria-hidden="true">
+        <div className="hp-bg-grid" />
+        <div className="hp-orb-1" />
+        <div className="hp-orb-2" />
+        <div className="hp-orb-3" />
+      </div>
+
+      {/* ══════════════ HEADER ══════════════ */}
+      <header className="hp-header">
+        <div className="hp-header-inner">
+
+          {/* Logo */}
+          <Link to="/" style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <div className="hp-logo-mark">
+              <FlaskConical size={20} />
+            </div>
+            <div>
+              <div className="hp-logo-text-main">
+                Lab<span>Track</span>
               </div>
-              <div>
-                <h1 className="text-lg font-bold tracking-tight text-white flex items-center gap-1">
-                  Lab<span className="text-cyan-400">Track</span>
-                </h1>
-                <p className="text-[10px] text-slate-400 tracking-wider font-semibold">
-                  DIGITAL LAB MANAGEMENT
-                </p>
-              </div>
-            </Link>
+              <div className="hp-logo-text-sub">DIGITAL LAB MANAGEMENT</div>
+            </div>
+          </Link>
 
-            {/* Desktop Navigation */}
-            <nav className="hidden lg:flex items-center gap-8">
-              <a className="lp-nav-link" href="#overview">
-                Overview
-              </a>
-              <a className="lp-nav-link" href="#features">
-                Features
-              </a>
-              <a className="lp-nav-link" href="#workflow">
-                How It Works
-              </a>
-              <a className="lp-nav-link" href="#portals">
-                Portals
-              </a>
-              <a className="lp-nav-link" href="#faqs">
-                FAQ
-              </a>
-            </nav>
+          {/* Desktop Nav */}
+          <nav className="hp-nav">
+            <a className="hp-nav-link" href="#overview">Overview</a>
+            <a className="hp-nav-link" href="#features">Features</a>
+            <a className="hp-nav-link" href="#workflow">How It Works</a>
+            <a className="hp-nav-link" href="#portals">Portals</a>
+            <a className="hp-nav-link" href="#faqs">FAQ</a>
+          </nav>
 
-            {/* Header Actions */}
-            <div className="hidden sm:flex items-center gap-3">
-              <Link
-                to="/login"
-                className="inline-flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-500 hover:to-cyan-400 text-white font-semibold rounded-xl text-sm transition shadow-lg shadow-cyan-500/25"
-              >
-                Login
-                <ArrowRight size={15} />
+          {/* CTA + Hamburger */}
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <div className="hp-header-cta-wrap">
+              <Link to="/login" className="hp-header-cta">
+                Sign In <ArrowRight size={14} />
               </Link>
             </div>
-
-            {/* Mobile Menu Button */}
             <button
-              type="button"
+              className="hp-menu-btn"
               onClick={() => setMenuOpen(!menuOpen)}
-              className="lg:hidden p-2 rounded-lg border border-white/10 hover:bg-white/5"
-              aria-label={menuOpen ? "Close navigation" : "Open navigation"}
+              aria-label={menuOpen ? "Close menu" : "Open menu"}
               aria-expanded={menuOpen}
-              aria-controls="mobile-navigation"
             >
-              {menuOpen ? <X size={22} /> : <Menu size={22} />}
+              {menuOpen ? <X size={20} /> : <Menu size={20} />}
             </button>
           </div>
-
-          {/* Mobile Navigation */}
-          {menuOpen && (
-            <nav
-              id="mobile-navigation"
-              className="lg:hidden lp-mobile-nav pb-5 flex flex-col gap-4"
-            >
-              <a href="#overview" onClick={closeMenu}>Overview</a>
-              <a href="#features" onClick={closeMenu}>Features</a>
-              <a href="#workflow" onClick={closeMenu}>How It Works</a>
-              <a href="#portals" onClick={closeMenu}>Portals</a>
-              <a href="#faqs" onClick={closeMenu}>FAQ</a>
-
-              <Link
-                to="/login"
-                onClick={closeMenu}
-                className="text-center py-2.5 bg-gradient-to-r from-blue-600 to-cyan-500 text-white rounded-xl font-semibold"
-              >
-                Login
-              </Link>
-            </nav>
-          )}
         </div>
+
+        {/* Mobile Nav */}
+        {menuOpen && (
+          <nav className="hp-mobile-nav" id="mobile-navigation">
+            <a href="#overview" onClick={closeMenu}>Overview</a>
+            <a href="#features" onClick={closeMenu}>Features</a>
+            <a href="#workflow" onClick={closeMenu}>How It Works</a>
+            <a href="#portals" onClick={closeMenu}>Portals</a>
+            <a href="#faqs" onClick={closeMenu}>FAQ</a>
+            <Link to="/login" className="hp-mobile-cta" onClick={closeMenu}>
+              Sign In to Portal
+            </Link>
+          </nav>
+        )}
       </header>
 
-      {/* Main Content */}
       <main>
-        {/* Hero Section */}
-        <section
-          id="overview"
-          className="relative max-w-7xl mx-auto px-5 sm:px-8 pt-20 sm:pt-28 pb-24"
-        >
-          <div className="grid lg:grid-cols-[1.05fr_0.95fr] items-center gap-14">
-            <div className="lp-reveal">
-              <div className="lp-badge">
-                <Sparkles size={14} className="text-cyan-400" />
+
+        {/* ══════════════ HERO ══════════════ */}
+        <section id="overview" className="hp-section hp-hero">
+          <div className="hp-hero-grid">
+
+            {/* Left — Copy */}
+            <div className="hp-reveal">
+              <div className="hp-hero-eyebrow">
+                <span className="hp-hero-eyebrow-dot" />
                 Modern Laboratory Operations
               </div>
 
-              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight mt-6 leading-tight">
-                Digital Lab Equipment
-                <span className="lp-gradient-text block">
-                  Fault & Calibration Tracking
-                </span>
+              <h1 className="hp-hero-h1">
+                Digital Lab Equipment<br />
+                <span className="hp-gradient-text">Fault &amp; Calibration</span><br />
+                Tracking
               </h1>
 
-              <p className="text-base sm:text-lg text-slate-400 mt-6 leading-8 max-w-xl">
+              <p className="hp-hero-desc">
                 A unified platform connecting Administrators, Lab Assistants,
                 and Students. Scan physical QR labels with any smartphone to
                 report faulty hardware, receive real-time email updates, and
                 maintain complete audit compliance.
               </p>
 
-              <div className="mt-9 flex flex-wrap gap-4">
-                <Link
-                  to="/login"
-                  className="lp-primary-button"
-                >
-                  Sign In to Portal
-                  <ArrowRight size={17} />
+              <div className="hp-hero-actions">
+                <Link to="/login" className="hp-btn-primary">
+                  Sign In to Portal <ArrowRight size={16} />
                 </Link>
-
-                <a
-                  href="#workflow"
-                  className="lp-secondary-button"
-                >
-                  <ScanLine size={17} />
-                  Explore Workflow
+                <a href="#workflow" className="hp-btn-ghost">
+                  <ScanLine size={16} /> Explore Workflow
                 </a>
               </div>
 
-              {/* Highlights */}
-              <div className="mt-12 flex flex-wrap gap-x-7 gap-y-4">
+              <div className="hp-hero-highlights">
                 {[
                   "Automated Email Alerts",
                   "Student Ticket Dashboard",
                   "QR-Based Identification",
                   "Strict Lab Isolation",
                 ].map((item) => (
-                  <div key={item} className="flex items-center gap-2">
-                    <CheckCircle2
-                      size={15}
-                      className="text-cyan-400 shrink-0"
-                    />
-                    <span className="text-xs text-slate-400">
-                      {item}
-                    </span>
+                  <div key={item} className="hp-highlight-pill">
+                    <CheckCircle2 size={14} />
+                    {item}
                   </div>
                 ))}
               </div>
             </div>
 
-            {/* Hero Visual Card */}
-            <div className="lp-reveal lp-delay-2 relative">
-              <div className="lp-dashboard-glow" />
+            {/* Right — Dashboard Visual */}
+            <div className="hp-reveal hp-reveal-d2 hp-hero-visual">
+              <div className="hp-hero-visual-glow" />
 
-              <div className="lp-preview-card relative rounded-3xl border border-white/10 p-5 sm:p-7 shadow-2xl bg-[#0b1428]/90 backdrop-blur-xl">
-                <div className="flex items-center justify-between border-b border-white/10 pb-5">
-                  <div>
-                    <p className="text-xs text-slate-400 font-mono">
-                      SYSTEM MONITORING
-                    </p>
-                    <h3 className="font-semibold text-lg text-white mt-1">
-                      Lab Infrastructure
-                    </h3>
+              <div className="hp-dashboard-card">
+                {/* macOS-style topbar */}
+                <div className="hp-dc-topbar">
+                  <div className="hp-dc-dots">
+                    <span /><span /><span />
                   </div>
-
-                  <div className="lp-preview-badge">
-                    <Activity size={14} />
-                    Active Services
-                  </div>
+                  <div className="hp-dc-title">SYSTEM MONITORING</div>
+                  <div className="hp-dc-status">ALL SYSTEMS ACTIVE</div>
                 </div>
 
-                <div className="mt-6 grid grid-cols-2 gap-4">
-                  <div className="lp-preview-tile bg-white/[0.03] p-4 rounded-2xl border border-white/5">
-                    <div className="flex items-center justify-between">
-                      <Layers3 className="text-cyan-400" size={20} />
-                      <span className="text-[10px] text-slate-500 font-mono">
-                        INVENTORY
-                      </span>
+                <div className="hp-dc-body">
+                  <div className="hp-dc-stats">
+                    {/* Stat 1 */}
+                    <div className="hp-stat-tile">
+                      <div className="hp-stat-icon">
+                        <Layers3 size={16} style={{ color: "#22d3ee" }} />
+                      </div>
+                      <div className="hp-stat-label">INVENTORY</div>
+                      <div className="hp-stat-value">Smart Labs</div>
+                      <div className="hp-stat-sub">Centralized tracking</div>
                     </div>
-                    <p className="text-xl font-bold text-white mt-4">Smart Labs</p>
-                    <p className="text-xs text-slate-400 mt-1">
-                      Centralized tracking
-                    </p>
+                    {/* Stat 2 */}
+                    <div className="hp-stat-tile">
+                      <div className="hp-stat-icon">
+                        <QrCode size={16} style={{ color: "#60a5fa" }} />
+                      </div>
+                      <div className="hp-stat-label">QR SCAN</div>
+                      <div className="hp-stat-value">Google Lens</div>
+                      <div className="hp-stat-sub">Instant profile view</div>
+                    </div>
+                    {/* Stat 3 */}
+                    <div className="hp-stat-tile">
+                      <div className="hp-stat-icon">
+                        <CalendarClock size={16} style={{ color: "#a78bfa" }} />
+                      </div>
+                      <div className="hp-stat-label">CALIBRATION</div>
+                      <div className="hp-stat-value">Automated</div>
+                      <div className="hp-stat-sub">Overdue alerts</div>
+                    </div>
+                    {/* Stat 4 */}
+                    <div className="hp-stat-tile">
+                      <div className="hp-stat-icon">
+                        <ClipboardCheck size={16} style={{ color: "#34d399" }} />
+                      </div>
+                      <div className="hp-stat-label">MAINTENANCE</div>
+                      <div className="hp-stat-value">Fault Tickets</div>
+                      <div className="hp-stat-sub">Real-time updates</div>
+                    </div>
                   </div>
 
-                  <div className="lp-preview-tile bg-white/[0.03] p-4 rounded-2xl border border-white/5">
-                    <div className="flex items-center justify-between">
-                      <QrCode className="text-blue-400" size={20} />
-                      <span className="text-[10px] text-slate-500 font-mono">
-                        QR SCAN
-                      </span>
+                  {/* Status strip */}
+                  <div className="hp-dc-strip">
+                    <div className="hp-dc-strip-left">
+                      <Activity size={13} />
+                      Automated Nodemailer Gmail Integration
                     </div>
-                    <p className="text-xl font-bold text-white mt-4">Google Lens</p>
-                    <p className="text-xs text-slate-400 mt-1">
-                      Instant profile view
-                    </p>
-                  </div>
-
-                  <div className="lp-preview-tile bg-white/[0.03] p-4 rounded-2xl border border-white/5">
-                    <div className="flex items-center justify-between">
-                      <CalendarClock className="text-violet-400" size={20} />
-                      <span className="text-[10px] text-slate-500 font-mono">
-                        CALIBRATION
-                      </span>
-                    </div>
-                    <p className="text-xl font-bold text-white mt-4">Automated</p>
-                    <p className="text-xs text-slate-400 mt-1">
-                      Overdue alerts
-                    </p>
-                  </div>
-
-                  <div className="lp-preview-tile bg-white/[0.03] p-4 rounded-2xl border border-white/5">
-                    <div className="flex items-center justify-between">
-                      <ClipboardCheck className="text-emerald-400" size={20} />
-                      <span className="text-[10px] text-slate-500 font-mono">
-                        MAINTENANCE
-                      </span>
-                    </div>
-                    <p className="text-xl font-bold text-white mt-4">Fault Tickets</p>
-                    <p className="text-xs text-slate-400 mt-1">
-                      Real-time updates
-                    </p>
+                    <div className="hp-dc-strip-badge">ACTIVE</div>
                   </div>
                 </div>
+              </div>
 
-                <div className="mt-5 p-4 rounded-2xl bg-cyan-500/[0.06] border border-cyan-400/20 text-xs text-slate-300 flex items-center justify-between">
-                  <span className="flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                    Automated Nodemailer Gmail Integration
-                  </span>
-                  <span className="text-cyan-400 font-bold font-mono">ACTIVE</span>
+              {/* Floating Chip */}
+              <div className="hp-float-chip">
+                <div className="hp-float-chip-icon">
+                  <CheckCircle2 size={16} />
+                </div>
+                <div>
+                  Ticket Resolved
+                  <small>Lab Assistant notified</small>
                 </div>
               </div>
             </div>
           </div>
         </section>
 
-        {/* Features Section */}
-        <section id="features" className="max-w-7xl mx-auto px-5 sm:px-8 py-20">
-          <div className="text-center max-w-3xl mx-auto">
-            <div className="lp-badge mx-auto">Core Capabilities</div>
-            <h2 className="text-3xl sm:text-4xl font-bold mt-5 text-white">
-              Built for Modern Technical Labs
-            </h2>
-            <p className="text-sm sm:text-base text-slate-400 mt-4 leading-7">
+        {/* ══════════════ STATS BAR ══════════════ */}
+        <div className="hp-stats-bar">
+          <div className="hp-stats-bar-inner">
+            <div className="hp-stat-block">
+              <div className="hp-stat-block-num">3<span>+</span></div>
+              <div className="hp-stat-block-label">Active Laboratories</div>
+            </div>
+            <div className="hp-stat-block">
+              <div className="hp-stat-block-num">100<span>%</span></div>
+              <div className="hp-stat-block-label">Digital Fault Tickets</div>
+            </div>
+            <div className="hp-stat-block">
+              <div className="hp-stat-block-num">QR<span>+</span></div>
+              <div className="hp-stat-block-label">Smart QR Labels</div>
+            </div>
+            <div className="hp-stat-block">
+              <div className="hp-stat-block-num">3<span>×</span></div>
+              <div className="hp-stat-block-label">Role-Based Portals</div>
+            </div>
+          </div>
+        </div>
+
+        {/* ══════════════ FEATURES ══════════════ */}
+        <section id="features" className="hp-section hp-features">
+          <div className="hp-section-header">
+            <div className="hp-label">
+              <Zap size={12} /> Core Capabilities
+            </div>
+            <h2>Built for Modern Technical Labs</h2>
+            <p>
               Streamline laboratory inventory control, calibration audits, and
               fault troubleshooting with integrated role-based security.
             </p>
           </div>
 
-          <div className="mt-14 grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {features.map((feature) => {
-              const Icon = feature.icon;
+          <div className="hp-features-grid">
+            {features.map((f, i) => {
+              const Icon = f.icon;
               return (
-                <div key={feature.title} className="lp-feature-card p-6 rounded-3xl border border-white/10 bg-[#0d172e]/80 backdrop-blur-xl">
-                  <div className="w-12 h-12 rounded-2xl bg-blue-500/10 border border-blue-400/20 text-cyan-400 flex items-center justify-center mb-5">
-                    <Icon size={24} />
+                <div
+                  key={f.title}
+                  className={`hp-feature-card hp-reveal hp-reveal-d${i + 1}`}
+                >
+                  <div className="hp-feature-num">{f.num}</div>
+                  <div className={`hp-feature-icon-wrap ${f.color}`}>
+                    <Icon size={22} />
                   </div>
-                  <h3 className="font-bold text-white text-base">{feature.title}</h3>
-                  <p className="text-xs sm:text-sm text-slate-400 mt-2.5 leading-6">
-                    {feature.description}
-                  </p>
+                  <h3>{f.title}</h3>
+                  <p>{f.description}</p>
                 </div>
               );
             })}
           </div>
         </section>
 
-        {/* Workflow Section */}
-        <section id="workflow" className="max-w-7xl mx-auto px-5 sm:px-8 py-20">
-          <div className="text-center max-w-3xl mx-auto">
-            <div className="lp-badge mx-auto">Step-by-Step Architecture</div>
-            <h2 className="text-3xl sm:text-4xl font-bold mt-5 text-white">
-              How the System Operates
-            </h2>
-            <p className="text-sm sm:text-base text-slate-400 mt-4 leading-7">
+        {/* ══════════════ WORKFLOW ══════════════ */}
+        <section id="workflow" className="hp-section hp-workflow">
+          <div className="hp-section-header">
+            <div className="hp-label">
+              <RefreshCw size={12} /> Step-by-Step Architecture
+            </div>
+            <h2>How the System Operates</h2>
+            <p>
               A transparent fault tracking and calibration lifecycle from
-              hardware registration to student issue reporting and final resolution.
+              hardware registration to student issue reporting and final
+              resolution.
             </p>
           </div>
 
-          <div className="mt-14 grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="hp-workflow-wrap">
             {workflow.map((step) => {
               const Icon = step.icon;
               return (
-                <div key={step.number} className="p-6 rounded-3xl border border-white/10 bg-[#0d172e]/80 backdrop-blur-xl relative">
-                  <span className="font-mono text-cyan-400 text-xs font-bold tracking-widest block mb-3">
-                    STEP {step.number}
-                  </span>
-                  <div className="w-10 h-10 rounded-xl bg-cyan-500/10 border border-cyan-400/20 text-cyan-400 flex items-center justify-center mb-4">
+                <div key={step.number} className="hp-workflow-step">
+                  <div className="hp-step-num">{step.number}</div>
+                  <div className="hp-step-icon">
                     <Icon size={20} />
                   </div>
-                  <h3 className="font-bold text-white text-sm">{step.title}</h3>
-                  <p className="text-xs text-slate-400 mt-2 leading-relaxed">
-                    {step.description}
-                  </p>
+                  <div className="hp-step-label">STEP {step.number}</div>
+                  <h3>{step.title}</h3>
+                  <p>{step.description}</p>
                 </div>
               );
             })}
           </div>
         </section>
 
-        {/* Portals Section */}
-        <section id="portals" className="max-w-7xl mx-auto px-5 sm:px-8 py-20">
-          <div className="text-center max-w-3xl mx-auto">
-            <div className="lp-badge mx-auto">Role-Based Access</div>
-            <h2 className="text-3xl sm:text-4xl font-bold mt-5 text-white">
-              Tailored Portals for Every User
-            </h2>
-            <p className="text-sm sm:text-base text-slate-400 mt-4 leading-7">
+        {/* ══════════════ PORTALS ══════════════ */}
+        <section id="portals" className="hp-section hp-portals">
+          <div className="hp-section-header">
+            <div className="hp-label">
+              <Users size={12} /> Role-Based Access
+            </div>
+            <h2>Tailored Portals for Every User</h2>
+            <p>
               Dedicated interfaces ensure that Administrators, Lab Assistants,
-              and Students have the exact tools and security boundaries they need.
+              and Students have the exact tools and security boundaries they
+              need.
             </p>
           </div>
 
-          <div className="mt-14 grid lg:grid-cols-3 gap-7">
+          <div className="hp-portals-grid">
             {portals.map((portal) => {
               const Icon = portal.icon;
               return (
-                <div
-                  key={portal.title}
-                  className="rounded-3xl border border-white/10 bg-[#0d182e]/90 p-7 flex flex-col justify-between backdrop-blur-xl shadow-xl hover:border-cyan-400/40 transition group"
-                >
-                  <div>
-                    <div className="flex items-center gap-3 mb-5">
-                      <div className="w-11 h-11 rounded-2xl bg-cyan-500/10 border border-cyan-400/20 text-cyan-400 flex items-center justify-center">
-                        <Icon size={22} />
-                      </div>
-                      <div>
-                        <h3 className="font-bold text-white text-lg">{portal.title}</h3>
-                        <p className="text-xs text-cyan-300 font-medium">
-                          {portal.subtitle}
-                        </p>
-                      </div>
+                <div key={portal.title} className={`hp-portal-card ${portal.accent}`}>
+                  <div className="hp-portal-body">
+                    <div className="hp-portal-icon-wrap">
+                      <Icon size={24} />
                     </div>
+                    <div className="hp-portal-subtitle">{portal.subtitle}</div>
+                    <h3>{portal.title}</h3>
+                    <p>{portal.description}</p>
 
-                    <p className="text-xs sm:text-sm text-slate-400 leading-6 mb-6">
-                      {portal.description}
-                    </p>
-
-                    <div className="space-y-2.5 pt-4 border-t border-white/10 mb-7">
+                    <div className="hp-portal-checklist">
                       {portal.points.map((pt) => (
-                        <div key={pt} className="flex items-center gap-2 text-xs text-slate-300">
-                          <CheckCircle2 size={13} className="text-cyan-400 shrink-0" />
+                        <div key={pt} className="hp-portal-check-item">
+                          <CheckCircle2 size={13} />
                           <span>{pt}</span>
                         </div>
                       ))}
                     </div>
                   </div>
 
-                  <Link
-                    to={portal.to}
-                    className="w-full inline-flex items-center justify-center gap-2 py-3 bg-white/[0.05] hover:bg-gradient-to-r hover:from-blue-600 hover:to-cyan-500 text-white rounded-xl text-xs font-bold border border-white/10 hover:border-transparent transition shadow-lg"
-                  >
-                    {portal.action}
-                    <ArrowRight size={14} />
-                  </Link>
+                  <div className="hp-portal-footer">
+                    <Link to={portal.to} className="hp-portal-btn">
+                      {portal.action} <ArrowRight size={14} />
+                    </Link>
+                  </div>
                 </div>
               );
             })}
           </div>
         </section>
 
-        {/* FAQ Section (Accordion) */}
-        <section id="faqs" className="max-w-4xl mx-auto px-5 sm:px-8 py-20">
-          <div className="text-center max-w-2xl mx-auto mb-12">
-            <div className="lp-badge mx-auto">
-              <HelpCircle size={14} className="text-cyan-400" />
-              Frequently Asked Questions
+        {/* ══════════════ FAQ ══════════════ */}
+        <section id="faqs" className="hp-section hp-faq" style={{ margin: "0 auto" }}>
+          <div className="hp-section-header">
+            <div className="hp-label">
+              <HelpCircle size={12} /> Frequently Asked Questions
             </div>
-            <h2 className="text-3xl sm:text-4xl font-bold mt-5 text-white">
-              Questions & Answers
-            </h2>
-            <p className="text-sm text-slate-400 mt-3">
+            <h2>Questions &amp; Answers</h2>
+            <p>
               Everything you need to know about navigating the system, reporting
               faults, tracking ticket status, and password management.
             </p>
           </div>
 
-          <div className="space-y-4">
-            {faqs.map((faq, index) => {
-              const isOpen = openFaq === index;
-              return (
-                <div
-                  key={faq.question}
-                  className="rounded-2xl border border-white/10 bg-[#0d182e]/80 backdrop-blur-xl overflow-hidden transition-all duration-200"
-                >
-                  <button
-                    type="button"
-                    onClick={() => toggleFaq(index)}
-                    className="w-full p-5 text-left flex items-center justify-between gap-4 text-sm sm:text-base font-semibold text-white hover:text-cyan-400 transition"
-                  >
-                    <span>{faq.question}</span>
-                    <ChevronDown
-                      size={18}
-                      className={`text-slate-400 shrink-0 transition-transform duration-200 ${
-                        isOpen ? "rotate-180 text-cyan-400" : ""
-                      }`}
-                    />
-                  </button>
-                  {isOpen && (
-                    <div className="px-5 pb-5 pt-1 text-xs sm:text-sm text-slate-300 leading-relaxed border-t border-white/[0.06] whitespace-pre-line">
-                      {faq.answer}
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        </section>
-
-        {/* Feedback Section */}
-        <section id="feedback" className="max-w-5xl mx-auto px-5 sm:px-8 py-16">
-          <div className="rounded-3xl p-8 sm:p-12 border border-white/10 bg-gradient-to-r from-blue-900/30 via-[#0d1a38]/80 to-cyan-900/30 backdrop-blur-xl text-center relative overflow-hidden shadow-2xl">
-            <div className="max-w-2xl mx-auto relative z-10 space-y-5">
-              <div className="w-14 h-14 rounded-2xl bg-cyan-500/10 border border-cyan-400/20 text-cyan-400 mx-auto flex items-center justify-center">
-                <MessageSquareHeart size={28} />
-              </div>
-              <h2 className="text-2xl sm:text-3xl font-extrabold text-white">
-                Help Us Improve the Platform
-              </h2>
-              <p className="text-xs sm:text-sm text-slate-300 leading-relaxed max-w-xl mx-auto">
-                Your feedback drives new laboratory features, mobile scanning
-                optimizations, and faster repair turnaround. We appreciate your
-                thoughts and suggestions.
-              </p>
-              <div className="pt-2">
+          <div className="hp-faq-list">
+            {faqs.map((faq, index) => (
+              <div
+                key={faq.question}
+                className={`hp-faq-item${openFaq === index ? " open" : ""}`}
+              >
                 <button
                   type="button"
-                  onClick={() => alert("Feedback portal URL will be linked here soon. Thank you for your support!")}
-                  className="inline-flex items-center gap-2.5 px-8 py-4 bg-gradient-to-r from-blue-600 via-cyan-600 to-teal-500 hover:from-blue-500 hover:to-cyan-400 text-white rounded-2xl text-sm font-bold shadow-xl shadow-cyan-500/25 transition-all transform hover:-translate-y-0.5 cursor-pointer"
+                  className="hp-faq-btn"
+                  onClick={() => toggleFaq(index)}
                 >
-                  <MessageSquareHeart size={18} />
-                  Share Your Feedback
+                  <span>{faq.question}</span>
+                  <ChevronDown size={18} className="hp-faq-chevron" />
                 </button>
+                {openFaq === index && (
+                  <div className="hp-faq-answer">{faq.answer}</div>
+                )}
               </div>
+            ))}
+          </div>
+        </section>
+
+        {/* ══════════════ FINAL CTA ══════════════ */}
+        <section className="hp-section hp-cta-section">
+          <div className="hp-cta-box">
+            <div className="hp-cta-icon">
+              <Activity size={28} />
+            </div>
+            <h2>
+              Better Visibility.{" "}
+              <span className="hp-gradient-text">Better Maintenance.</span>
+            </h2>
+            <p>
+              Sign in to manage laboratory inventory, maintain equipment
+              calibrations, or review your student fault tickets.
+            </p>
+            <div className="hp-cta-actions">
+              <Link to="/login" className="hp-btn-primary">
+                Sign In to System <ArrowRight size={16} />
+              </Link>
+              <a href="#overview" className="hp-btn-ghost">
+                Learn More
+              </a>
             </div>
           </div>
         </section>
 
-        {/* Final CTA */}
-        <section className="max-w-7xl mx-auto px-5 sm:px-8 pb-20">
-          <div className="lp-final-cta rounded-3xl p-8 sm:p-12 text-center relative overflow-hidden">
-            <div className="relative z-10 max-w-3xl mx-auto">
-              <div className="lp-cta-icon mx-auto">
-                <Activity size={25} />
-              </div>
-
-              <h2 className="text-3xl sm:text-4xl font-bold mt-7 text-white">
-                Better Visibility.
-                <span className="lp-gradient-text">
-                  {" "}Better Maintenance.
-                </span>
-              </h2>
-
-              <p className="text-sm sm:text-base text-slate-400 leading-7 mt-5">
-                Sign in to manage laboratory inventory, maintain equipment
-                calibrations, or review your student fault tickets.
-              </p>
-
-              <div className="mt-8 flex items-center justify-center gap-4">
-                <Link to="/login" className="lp-primary-button">
-                  Sign In to System
-                  <ArrowRight size={17} />
-                </Link>
-              </div>
-            </div>
-          </div>
-        </section>
       </main>
 
-      {/* Footer */}
-      <footer className="lp-footer border-t border-white/[0.08]">
-        <div className="max-w-7xl mx-auto px-5 sm:px-8 pt-14 pb-7">
-          <div className="grid sm:grid-cols-2 lg:grid-cols-[1.5fr_1fr_1fr_1fr] gap-10 pb-12">
-            {/* Project Identity */}
-            <div>
-              <Link to="/" className="inline-flex items-center gap-3">
-                <div className="lp-logo">
-                  <FlaskConical size={22} />
+      {/* ══════════════ FOOTER ══════════════ */}
+      <footer className="hp-footer">
+        <div className="hp-footer-inner">
+          <div className="hp-footer-grid">
+
+            {/* Brand */}
+            <div className="hp-footer-about">
+              <Link to="/" style={{ display: "inline-flex", alignItems: "center", gap: 12 }}>
+                <div className="hp-logo-mark">
+                  <FlaskConical size={18} />
                 </div>
                 <div>
-                  <h3 className="font-bold text-white">
-                    Lab<span className="text-cyan-400">Track</span>
-                  </h3>
-                  <p className="text-[10px] text-slate-500 tracking-wider font-semibold">
-                    LABORATORY MANAGEMENT
-                  </p>
+                  <div className="hp-logo-text-main">Lab<span>Track</span></div>
+                  <div className="hp-logo-text-sub">LABORATORY MANAGEMENT</div>
                 </div>
               </Link>
-              <p className="text-sm text-slate-400 leading-7 mt-5 max-w-sm">
-                A centralized platform for laboratory equipment
-                identification, calibration visibility, and digital
-                fault management with automated email notifications.
+              <p>
+                A centralized platform for laboratory equipment identification,
+                calibration visibility, and digital fault management with
+                automated email notifications.
               </p>
             </div>
 
             {/* Quick Links */}
-            <div>
-              <h4 className="lp-footer-heading">Quick Links</h4>
-              <div className="mt-5 space-y-4 text-sm text-slate-400">
-                <a className="lp-footer-link block" href="#overview">Overview</a>
-                <a className="lp-footer-link block" href="#features">Features</a>
-                <a className="lp-footer-link block" href="#workflow">Workflow</a>
-                <a className="lp-footer-link block" href="#portals">Portals</a>
-                <a className="lp-footer-link block" href="#faqs">FAQ</a>
-              </div>
+            <div className="hp-footer-col">
+              <h4>Quick Links</h4>
+              <a href="#overview">Overview</a>
+              <a href="#features">Features</a>
+              <a href="#workflow">Workflow</a>
+              <a href="#portals">Portals</a>
+              <a href="#faqs">FAQ</a>
             </div>
 
-            {/* Portals */}
-            <div>
-              <h4 className="lp-footer-heading">Access Portals</h4>
-              <div className="mt-5 space-y-4 text-sm text-slate-400">
-                <Link className="lp-footer-link block" to="/login?role=Admin">
-                  Administrator
-                </Link>
-                <Link className="lp-footer-link block" to="/login?role=Assistant">
-                  Lab Assistant
-                </Link>
-                <Link className="lp-footer-link block" to="/login?role=Student">
-                  Student Portal
-                </Link>
-              </div>
+            {/* Access Portals */}
+            <div className="hp-footer-col">
+              <h4>Access Portals</h4>
+              <Link to="/login?role=Admin">Administrator</Link>
+              <Link to="/login?role=Assistant">Lab Assistant</Link>
+              <Link to="/login?role=Student">Student Portal</Link>
             </div>
 
-            {/* Academic Details */}
-            <div>
-              <h4 className="lp-footer-heading">Project Details</h4>
-              <div className="mt-5 space-y-4 text-sm text-slate-400">
-                <p className="flex items-center gap-2">
-                  <GraduationCap size={16} className="text-cyan-400" />
-                  B.Tech Major Project
-                </p>
-                <p className="flex items-center gap-2">
-                  <FlaskConical size={16} className="text-cyan-400" />
-                  GLA University
-                </p>
-                <p className="flex items-center gap-2">
-                  <BadgeCheck size={16} className="text-cyan-400" />
-                  Group G137
-                </p>
-              </div>
+            {/* Project Details */}
+            <div className="hp-footer-col">
+              <h4>Project Details</h4>
+              <p><GraduationCap size={14} style={{ display: "inline", marginRight: 6, color: "#22d3ee" }} />B.Tech Major Project</p>
+              <p><FlaskConical size={14} style={{ display: "inline", marginRight: 6, color: "#22d3ee" }} />GLA University</p>
+              <p><BadgeCheck size={14} style={{ display: "inline", marginRight: 6, color: "#22d3ee" }} />Group G137</p>
             </div>
           </div>
 
-          <div className="border-t border-white/[0.08] pt-7 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-500">
-            <p>
-              © {new Date().getFullYear()} Digital Lab Equipment Fault Tracking System.
-            </p>
-            <p className="flex items-center gap-2">
+          <div className="hp-footer-bottom">
+            <span>© {new Date().getFullYear()} Digital Lab Equipment Fault Tracking System.</span>
+            <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
               Designed for smarter laboratory operations
-              <Sparkles size={13} className="text-cyan-400" />
-            </p>
+              <Sparkles size={12} style={{ color: "#22d3ee" }} />
+            </span>
           </div>
         </div>
       </footer>
+
     </div>
   );
 };
