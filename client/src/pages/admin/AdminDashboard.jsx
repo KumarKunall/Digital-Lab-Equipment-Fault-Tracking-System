@@ -12,13 +12,17 @@ import {
   Activity,
   Layers3,
   Clock,
-  Sparkles,
   QrCode,
   Printer,
+  Download,
   X,
-  Loader2
+  Loader2,
+  Plus
 } from 'lucide-react';
 import { OperationalStatusBadge } from '../../utils/statusBadges';
+import PageHeader from '../../components/common/PageHeader';
+import StatCard from '../../components/common/StatCard';
+import Modal from '../../components/common/Modal';
 
 const AdminDashboard = () => {
   const [stats, setStats] = useState(null);
@@ -32,8 +36,18 @@ const AdminDashboard = () => {
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        const res = await api.get('/reports/stats');
-        setStats(res.data.data);
+        const [statsRes, labsRes, asstsRes] = await Promise.all([
+          api.get('/reports/stats'),
+          api.get('/labs'),
+          api.get('/users/assistants')
+        ]);
+        const activeLabsCount = (labsRes.data.data || []).filter(l => l.isActive !== false).length;
+        const activeAssistantsCount = (asstsRes.data.data || []).filter(a => a.isActive !== false).length;
+        setStats({
+          ...(statsRes.data.data || {}),
+          totalLabs: activeLabsCount,
+          totalAssistants: activeAssistantsCount
+        });
       } catch (err) {
         console.error('Error fetching admin stats:', err);
       } finally {
@@ -49,7 +63,13 @@ const AdminDashboard = () => {
     setShowQrModal(true);
     try {
       const res = await api.get(`/equipment/${id}/qr`);
-      setQrData(res.data.data);
+      const d = res.data.data;
+      const qrImg = d.qrDataUrl || d.qrCodeDataUrl;
+      setQrData({
+        ...d,
+        qrCodeDataUrl: qrImg,
+        qrDataUrl: qrImg
+      });
     } catch (err) {
       alert(err.response?.data?.message || 'Failed to generate QR code');
       setShowQrModal(false);
@@ -58,162 +78,142 @@ const AdminDashboard = () => {
     }
   };
 
-  return (
-    <div className="p-6 sm:p-8 max-w-7xl mx-auto w-full space-y-7">
-      
-      {/* Top Banner (HomePage Aesthetic) */}
-      <div className="relative rounded-3xl p-7 border border-white/10 bg-gradient-to-r from-[#111f38]/90 via-[#0d192e]/90 to-[#0a1426]/90 backdrop-blur-xl shadow-2xl overflow-hidden">
-        <div className="absolute top-0 right-0 w-80 h-80 bg-cyan-500/10 rounded-full blur-3xl pointer-events-none" />
-        
-        <div className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-5">
-          <div>
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-400/20 text-cyan-300 text-[11px] font-bold tracking-wider uppercase mb-3">
-              <ShieldCheck className="w-3.5 h-3.5 text-cyan-400" />
-              SYSTEM ADMINISTRATION
-              <Sparkles className="w-3 h-3 text-cyan-400" />
-            </div>
-            <h2 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
-              Institutional Overview
-            </h2>
-            <p className="text-xs sm:text-sm text-slate-400 mt-1 max-w-2xl leading-relaxed">
-              Global management of university laboratories, assistant authorization, and system-wide equipment compliance metrics.
-            </p>
-          </div>
+  const handleDownloadQr = () => {
+    const src = qrData?.qrCodeDataUrl || qrData?.qrDataUrl;
+    if (!src) return;
+    const link = document.createElement('a');
+    link.href = src;
+    link.download = `QR_${(qrData.equipmentName || 'equipment').replace(/\s+/g, '_')}_${qrData.serialNumber || qrData.publicId}.png`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
-          <div className="flex flex-wrap items-center gap-3 shrink-0">
+  const readyCount = stats?.readyToUse ?? stats?.readyEquipment ?? 0;
+  const compliancePercent =
+    stats?.totalEquipment && stats.totalEquipment > 0
+      ? Math.round((readyCount / stats.totalEquipment) * 100)
+      : 100;
+
+  return (
+    <div className="p-5 sm:p-8 max-w-7xl mx-auto w-full space-y-7">
+      
+      {/* Page Header */}
+      <PageHeader
+        badge="System Administration"
+        badgeIcon={ShieldCheck}
+        title="Institutional Overview"
+        description="Global management of university laboratories, assistant staff authorization, and system-wide equipment compliance metrics."
+        actions={
+          <>
             <Link
               to="/admin/labs"
-              className="inline-flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 text-white rounded-xl text-xs font-bold shadow-lg shadow-cyan-500/20 transition-all transform hover:-translate-y-0.5"
+              className="inline-flex items-center gap-2 px-4 py-2.5 bg-[#087A35] hover:bg-[#075C2B] text-white rounded-xl text-xs font-bold shadow-sm transition"
             >
               <Building2 className="w-4 h-4" />
               Manage Labs
             </Link>
             <Link
               to="/admin/assistants"
-              className="inline-flex items-center gap-2 px-4 py-2.5 bg-white/[0.06] hover:bg-white/[0.1] border border-white/15 text-white rounded-xl text-xs font-bold transition-all transform hover:-translate-y-0.5"
+              className="inline-flex items-center gap-2 px-4 py-2.5 bg-white hover:bg-slate-50 border border-[#CBD5E1] text-[#172033] rounded-xl text-xs font-bold shadow-sm transition"
             >
-              <Users className="w-4 h-4 text-cyan-400" />
-              Add Assistant
+              <Users className="w-4 h-4 text-[#087A35]" />
+              Manage Assistants
             </Link>
-          </div>
-        </div>
-      </div>
+          </>
+        }
+      />
 
       {/* Metrics Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
-        
-        {/* Total Labs */}
-        <div className="p-6 rounded-3xl border border-white/10 bg-[#0d182e]/80 backdrop-blur-xl shadow-xl flex items-center justify-between">
-          <div>
-            <span className="text-xs text-slate-400 font-bold tracking-wider uppercase block">
-              Active Laboratories
-            </span>
-            <p className="text-3xl font-extrabold text-white mt-1">
-              {stats ? stats.totalLabs : '...'}
-            </p>
-            <span className="text-[11px] text-cyan-400 mt-1 block">Campus Facilities</span>
-          </div>
-          <div className="w-12 h-12 rounded-2xl bg-cyan-500/10 border border-cyan-400/20 text-cyan-400 flex items-center justify-center">
-            <Building2 className="w-6 h-6" />
-          </div>
-        </div>
-
-        {/* Total Assistants */}
-        <div className="p-6 rounded-3xl border border-white/10 bg-[#0d182e]/80 backdrop-blur-xl shadow-xl flex items-center justify-between">
-          <div>
-            <span className="text-xs text-slate-400 font-bold tracking-wider uppercase block">
-              Registered Assistants
-            </span>
-            <p className="text-3xl font-extrabold text-white mt-1">
-              {stats ? stats.totalAssistants : '...'}
-            </p>
-            <span className="text-[11px] text-blue-400 mt-1 block">Staff Accounts</span>
-          </div>
-          <div className="w-12 h-12 rounded-2xl bg-blue-500/10 border border-blue-400/20 text-blue-400 flex items-center justify-center">
-            <Users className="w-6 h-6" />
-          </div>
-        </div>
-
-        {/* Total Equipment */}
-        <div className="p-6 rounded-3xl border border-white/10 bg-[#0d182e]/80 backdrop-blur-xl shadow-xl flex items-center justify-between">
-          <div>
-            <span className="text-xs text-slate-400 font-bold tracking-wider uppercase block">
-              Total Equipment
-            </span>
-            <p className="text-3xl font-extrabold text-white mt-1">
-              {stats ? stats.totalEquipment : '...'}
-            </p>
-            <span className="text-[11px] text-emerald-400 mt-1 block">
-              {stats ? stats.readyEquipment : '0'} Operational
-            </span>
-          </div>
-          <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 border border-emerald-400/20 text-emerald-400 flex items-center justify-center">
-            <Cpu className="w-6 h-6" />
-          </div>
-        </div>
-
-        {/* Active Tickets */}
-        <div className="p-6 rounded-3xl border border-white/10 bg-[#0d182e]/80 backdrop-blur-xl shadow-xl flex items-center justify-between">
-          <div>
-            <span className="text-xs text-slate-400 font-bold tracking-wider uppercase block">
-              Active Fault Tickets
-            </span>
-            <p className="text-3xl font-extrabold text-rose-400 mt-1">
-              {stats ? stats.openTickets : '...'}
-            </p>
-            <span className="text-[11px] text-rose-400/80 mt-1 block">Pending Investigation</span>
-          </div>
-          <div className="w-12 h-12 rounded-2xl bg-rose-500/10 border border-rose-400/20 text-rose-400 flex items-center justify-center">
-            <AlertOctagon className="w-6 h-6" />
-          </div>
-        </div>
-
+        <StatCard
+          title="Active Laboratories"
+          value={loading ? '...' : (stats?.totalLabs ?? 0)}
+          subtitle="Campus Facilities"
+          icon={Building2}
+          color="green"
+        />
+        <StatCard
+          title="Registered Assistants"
+          value={loading ? '...' : (stats?.totalAssistants ?? 0)}
+          subtitle="Staff Accounts"
+          icon={Users}
+          color="blue"
+        />
+        <StatCard
+          title="Total Equipment"
+          value={loading ? '...' : (stats?.totalEquipment ?? 0)}
+          subtitle={`${readyCount} Operational`}
+          icon={Cpu}
+          color="green"
+        />
+        <StatCard
+          title="Active Fault Tickets"
+          value={loading ? '...' : (stats?.openTickets ?? 0)}
+          subtitle="Pending Investigation"
+          icon={AlertOctagon}
+          color={stats?.openTickets > 0 ? 'red' : 'green'}
+        />
       </div>
 
       {/* Compliance & Health Summary Banner */}
-      <div className="rounded-3xl border border-white/10 bg-gradient-to-r from-[#0d182e]/90 to-[#122240]/90 p-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+      <div className="rounded-2xl border border-[#E5EBE6] bg-white p-6 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-5">
         <div className="flex items-center gap-4">
-          <div className="w-11 h-11 rounded-2xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0">
+          <div className="w-12 h-12 rounded-xl bg-[#EAF5ED] text-[#087A35] border border-[#BDE3CA] flex items-center justify-center shrink-0">
             <Activity className="w-6 h-6" />
           </div>
           <div>
-            <h4 className="font-bold text-white text-sm">System Compliance Rate</h4>
-            <p className="text-xs text-slate-400 mt-0.5">
+            <div className="flex items-center gap-2">
+              <h4 className="font-extrabold text-[#172033] text-sm sm:text-base">
+                System Compliance Rate: {compliancePercent}%
+              </h4>
+            </div>
+            <p className="text-xs text-[#647067] mt-0.5">
               {stats?.totalEquipment
-                ? `${Math.round(((stats.readyEquipment || 0) / stats.totalEquipment) * 100)}% of laboratory hardware is verified and operational`
+                ? `${stats.readyEquipment || 0} of ${stats.totalEquipment} laboratory instruments are operational and verified.`
                 : 'Loading metrics...'}
             </p>
           </div>
         </div>
-        <div className="text-xs text-slate-400 font-mono flex items-center gap-2">
-          <Clock className="w-4 h-4 text-cyan-400" />
-          <span>Real-time Atlas Telemetry</span>
+
+        {/* Visual compliance bar */}
+        <div className="w-full sm:w-64 flex flex-col gap-1.5">
+          <div className="flex justify-between text-xs font-semibold text-[#647067]">
+            <span>Operational Health</span>
+            <span className="text-[#087A35] font-bold">{compliancePercent}%</span>
+          </div>
+          <div className="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden">
+            <div
+              className="bg-[#087A35] h-full rounded-full transition-all duration-500"
+              style={{ width: `${compliancePercent}%` }}
+            />
+          </div>
         </div>
       </div>
 
-      {/* Frequently Damaged Instruments Table (Strict damageCount ranking) */}
-      <div className="rounded-3xl border border-white/10 bg-[#0d182e]/80 backdrop-blur-xl shadow-2xl overflow-hidden">
-        <div className="p-6 border-b border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white/[0.02]">
+      {/* Frequently Damaged Instruments Table */}
+      <div className="rounded-3xl border border-[#E5EBE6] bg-white shadow-sm overflow-hidden">
+        <div className="p-6 border-b border-[#E5EBE6] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
-            <h3 className="text-base font-bold text-white flex items-center gap-2">
-              <Layers3 className="w-4 h-4 text-cyan-400" />
+            <h3 className="text-base font-extrabold text-[#172033] flex items-center gap-2">
+              <Layers3 className="w-4 h-4 text-[#087A35]" />
               Most Frequently Damaged Instruments
             </h3>
-            <p className="text-xs text-slate-400 mt-0.5">
+            <p className="text-xs text-[#647067] mt-0.5">
               Ranked in descending order of cumulative fault tickets to highlight hardware replacement requirements.
             </p>
           </div>
           <Link
             to="/admin/reports"
-            className="text-xs font-bold text-cyan-400 hover:text-cyan-300 flex items-center gap-1.5 transition self-start sm:self-auto"
+            className="text-xs font-bold text-[#087A35] hover:text-[#075C2B] flex items-center gap-1.5 transition self-start sm:self-auto"
           >
-            Audit Reports <ArrowRight className="w-3.5 h-3.5" />
+            View Full Audit Reports <ArrowRight className="w-3.5 h-3.5" />
           </Link>
         </div>
 
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
-            <thead className="bg-white/[0.03] text-slate-400 font-bold border-b border-white/10 uppercase tracking-wider text-[11px]">
+            <thead className="bg-[#F7F9F7] text-[#647067] font-bold border-b border-[#E5EBE6] uppercase tracking-wider text-[11px]">
               <tr>
                 <th className="px-6 py-4">Equipment Details</th>
                 <th className="px-6 py-4">Laboratory</th>
@@ -223,33 +223,34 @@ const AdminDashboard = () => {
                 <th className="px-6 py-4 text-right">QR Code</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-white/[0.06]">
+            <tbody className="divide-y divide-[#E5EBE6]">
               {stats?.mostDamagedEquipment && stats.mostDamagedEquipment.length > 0 ? (
                 stats.mostDamagedEquipment.map((eq) => (
-                  <tr key={eq._id} className="hover:bg-white/[0.03] transition-colors">
+                  <tr key={eq._id} className="hover:bg-[#F7F9F7]/60 transition-colors">
                     <td className="px-6 py-4">
-                      <span className="font-bold text-white block text-sm">{eq.name}</span>
-                      <span className="font-mono text-[11px] text-slate-400">
+                      <span className="font-bold text-[#172033] block text-sm">{eq.name}</span>
+                      <span className="font-mono text-[11px] text-[#647067]">
                         SN: {eq.serialNumber} {eq.model ? `• ${eq.model}` : ''}
                       </span>
                     </td>
                     <td className="px-6 py-4">
-                      <span className="text-slate-300 font-medium block">{eq.labId?.labName}</span>
-                      <span className="text-[10px] text-slate-400 font-mono">({eq.labId?.labId})</span>
+                      <span className="text-[#172033] font-medium block">{eq.labId?.labName}</span>
+                      <span className="text-[10px] text-[#647067] font-mono">({eq.labId?.labId})</span>
                     </td>
-                    <td className="px-6 py-4 text-slate-300">{eq.location}</td>
+                    <td className="px-6 py-4 text-[#647067] font-medium">{eq.location}</td>
                     <td className="px-6 py-4">
                       <OperationalStatusBadge status={eq.operationalStatus} />
                     </td>
                     <td className="px-6 py-4 text-center">
-                      <span className="inline-block px-3 py-1 rounded-lg bg-rose-500/15 border border-rose-500/30 text-rose-300 font-bold font-mono text-xs">
+                      <span className="inline-block px-3 py-1 rounded-full bg-red-50 border border-red-200 text-red-700 font-bold font-mono text-xs">
                         {eq.damageCount} {eq.damageCount === 1 ? 'fault' : 'faults'}
                       </span>
                     </td>
                     <td className="px-6 py-4 text-right">
                       <button
+                        type="button"
                         onClick={() => handleOpenQr(eq._id)}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-cyan-500/15 hover:bg-cyan-500/25 border border-cyan-400/30 text-cyan-300 text-xs font-semibold transition cursor-pointer"
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#EAF5ED] hover:bg-[#DDF2E3] border border-[#BDE3CA] text-[#087A35] text-xs font-bold transition cursor-pointer"
                         title="View / Print QR Code"
                       >
                         <QrCode className="w-3.5 h-3.5" />
@@ -260,7 +261,7 @@ const AdminDashboard = () => {
                 ))
               ) : (
                 <tr>
-                  <td colSpan="6" className="px-6 py-10 text-center text-slate-400">
+                  <td colSpan="6" className="px-6 py-10 text-center text-[#647067]">
                     No equipment damage records found.
                   </td>
                 </tr>
@@ -270,48 +271,58 @@ const AdminDashboard = () => {
         </div>
       </div>
 
-      {/* QR Code Printable Modal for Admin Dashboard */}
-      {showQrModal && (
-        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="bg-[#0f1d38] border border-white/15 rounded-3xl w-full max-w-sm p-6 text-center shadow-2xl relative text-white">
-            <button
-              onClick={() => { setShowQrModal(false); setQrData(null); }}
-              className="absolute top-5 right-5 text-slate-400 hover:text-white cursor-pointer"
-            >
-              <X className="w-5 h-5" />
-            </button>
-
-            {qrLoading || !qrData ? (
-              <div className="py-12 flex flex-col items-center justify-center gap-3">
-                <Loader2 className="w-8 h-8 text-cyan-400 animate-spin" />
-                <p className="text-xs text-slate-400 font-mono">Generating high-contrast QR code...</p>
-              </div>
-            ) : (
-              <>
-                <h3 className="font-bold text-base text-white">{qrData.equipmentName}</h3>
-                <p className="text-xs text-slate-400 font-mono mt-0.5">SN: {qrData.serialNumber}</p>
-                <p className="text-xs text-cyan-400 mt-0.5">{qrData.labName} • {qrData.labBlock}</p>
-
-                <div className="my-5 p-4 bg-white rounded-2xl inline-block shadow-xl">
-                  <img src={qrData.qrCodeDataUrl} alt="Equipment QR Code" className="w-48 h-48 mx-auto" />
-                </div>
-
-                <p className="text-[11px] text-slate-400 font-mono break-all mb-4">
-                  Public QR ID: <span className="text-cyan-300 font-bold">{qrData.publicId}</span>
-                </p>
-
-                <button
-                  onClick={() => window.print()}
-                  className="inline-flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 text-white rounded-xl text-xs font-bold shadow-lg cursor-pointer transition"
-                >
-                  <Printer className="w-4 h-4" />
-                  Print QR Label
-                </button>
-              </>
-            )}
+      {/* QR Code Printable Modal */}
+      <Modal
+        isOpen={showQrModal}
+        onClose={() => {
+          setShowQrModal(false);
+          setQrData(null);
+        }}
+        title="Equipment Identification QR Code"
+        subtitle="High-contrast printable sticker for physical instrument identification"
+        maxWidth="max-w-sm"
+      >
+        {qrLoading || !qrData ? (
+          <div className="py-12 flex flex-col items-center justify-center gap-3">
+            <Loader2 className="w-8 h-8 text-[#087A35] animate-spin" />
+            <p className="text-xs text-[#647067] font-mono">Generating QR code...</p>
           </div>
-        </div>
-      )}
+        ) : (
+          <div className="text-center">
+            <h4 className="font-extrabold text-base text-[#172033]">{qrData.equipmentName}</h4>
+            <p className="text-xs text-[#647067] font-mono mt-0.5">SN: {qrData.serialNumber}</p>
+            <p className="text-xs text-[#087A35] font-bold mt-0.5">{qrData.labName} • {qrData.labBlock}</p>
+
+            <div className="my-5 p-4 bg-white border border-[#E5EBE6] rounded-2xl inline-block shadow-sm">
+              <img src={qrData.qrCodeDataUrl || qrData.qrDataUrl} alt="Equipment QR Code" className="w-44 h-44 mx-auto" />
+            </div>
+
+            <p className="text-[11px] text-[#647067] font-mono break-all mb-5">
+              Public QR ID: <span className="text-[#087A35] font-bold">{qrData.publicId}</span>
+            </p>
+
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => window.print()}
+                className="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 bg-[#087A35] hover:bg-[#075C2B] text-white rounded-xl text-xs font-bold transition shadow-sm cursor-pointer"
+              >
+                <Printer className="w-4 h-4" />
+                Print Sticker
+              </button>
+              <button
+                type="button"
+                onClick={handleDownloadQr}
+                className="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 bg-[#EAF5ED] hover:bg-[#DDF2E3] text-[#087A35] border border-[#BDE3CA] rounded-xl text-xs font-bold transition cursor-pointer"
+              >
+                <Download className="w-4 h-4" />
+                Download PNG
+              </button>
+            </div>
+          </div>
+        )}
+      </Modal>
+
     </div>
   );
 };
