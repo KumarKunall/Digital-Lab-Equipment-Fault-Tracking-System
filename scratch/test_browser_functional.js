@@ -143,6 +143,35 @@ async function runTests() {
     // ========================================================
     console.log('\n>>> Testing Priority 4: Dynamic Navbar Active Highlight...');
     await cdp.send('Page.navigate', { url: 'http://localhost:5173/' });
+    // Wait for the page to render navigation and sections
+    await sleep(3000);
+    // Ensure header nav exists before proceeding
+    const navWait = await cdp.eval(`
+  new Promise((resolve) => {
+    const start = Date.now();
+
+    const check = () => {
+      const nav = document.querySelector('header nav');
+
+      if (nav) {
+        resolve({ found: true });
+      } else if (Date.now() - start > 10000) {
+        resolve({
+          found: false,
+          headerExists: !!document.querySelector('header'),
+          navCount: document.querySelectorAll('nav').length,
+          title: document.title
+        });
+      } else {
+        setTimeout(check, 200);
+      }
+    };
+
+    check();
+  })
+`);
+
+console.log("Navbar detection:", navWait);
     await sleep(2000);
 
     // Initial check: Home should be active
