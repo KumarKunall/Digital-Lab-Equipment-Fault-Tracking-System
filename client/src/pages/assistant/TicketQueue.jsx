@@ -6,19 +6,21 @@ import {
   Clock,
   Wrench,
   CheckCircle2,
-  X,
   Eye,
   User,
   Phone,
   Calendar,
   AlertCircle,
-  Sparkles,
-  LayoutDashboard,
   RefreshCw,
   Loader2,
-  Radio
+  ExternalLink,
+  Mail,
+  Camera
 } from 'lucide-react';
 import { TicketStatusBadge, OperationalStatusBadge } from '../../utils/statusBadges';
+import PageHeader from '../../components/common/PageHeader';
+import Modal from '../../components/common/Modal';
+import EmptyState from '../../components/common/EmptyState';
 
 const TicketQueue = () => {
   const [tickets, setTickets] = useState([]);
@@ -55,12 +57,11 @@ const TicketQueue = () => {
   useEffect(() => {
     fetchTickets();
 
-    // Instant real-time background sync every 5 seconds (Requirement: Turant data fetch)
+    // Instant real-time background sync every 5 seconds
     const interval = setInterval(() => {
       fetchTickets();
     }, 5000);
 
-    // Fetch immediately when user focuses/switches back to this tab
     const handleFocus = () => fetchTickets();
     window.addEventListener('focus', handleFocus);
 
@@ -101,181 +102,151 @@ const TicketQueue = () => {
   };
 
   return (
-    <div className="p-6 sm:p-8 max-w-7xl mx-auto w-full space-y-7">
+    <div className="p-5 sm:p-8 max-w-7xl mx-auto w-full space-y-7">
       
-      {/* Header Banner */}
-      <div className="relative rounded-3xl p-7 border border-white/10 bg-gradient-to-r from-[#111f38]/90 via-[#0d192e]/90 to-[#0a1426]/90 backdrop-blur-xl shadow-2xl overflow-hidden flex flex-col sm:flex-row sm:items-center justify-between gap-5">
-        <div>
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-400/20 text-cyan-300 text-[11px] font-bold tracking-wider uppercase mb-2">
-            <AlertOctagon className="w-3.5 h-3.5 text-rose-400" />
-            REPAIR QUEUE LIFECYCLE
-            <span className="flex h-2 w-2 relative ml-1">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-            </span>
-            <span className="text-[10px] text-emerald-400 font-mono lowercase">live auto-sync</span>
-          </div>
-          <h2 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
-            Damaged Equipment & Fault Tickets
-          </h2>
-          <p className="text-xs sm:text-sm text-slate-400 mt-1 max-w-2xl leading-relaxed">
-            Review student fault reports with photographic evidence. New tickets sync automatically every 5 seconds.
-          </p>
-        </div>
-
-        <div className="flex flex-wrap items-center gap-3 shrink-0 self-start sm:self-auto">
-          {/* Go to Main Dashboard Button */}
-          <Link
-            to="/assistant"
-            className="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-white/10 hover:bg-white/15 text-white text-xs font-semibold border border-white/10 transition"
-          >
-            <LayoutDashboard className="w-3.5 h-3.5 text-cyan-400" />
-            Go to Main Dashboard
-          </Link>
-
-          {/* Instant Manual Refresh */}
+      {/* Header */}
+      <PageHeader
+        badge="Damage Inspection & Repairs"
+        badgeIcon={AlertOctagon}
+        title="Fault Ticket Queue"
+        description="Inspect submitted student damage tickets, review photographs, manage repair lifecycles, and dispatch resolution alerts."
+        actions={
           <button
             type="button"
             onClick={() => fetchTickets(true)}
             disabled={refreshing}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-white/10 hover:bg-white/15 text-white text-xs font-semibold border border-white/10 transition cursor-pointer"
-            title="Fetch latest tickets immediately"
+            className="inline-flex items-center gap-2 px-4 py-2.5 bg-white hover:bg-slate-50 text-[#172033] border border-[#CBD5E1] rounded-xl text-xs font-bold transition shadow-sm cursor-pointer disabled:opacity-50"
           >
-            <RefreshCw className={`w-3.5 h-3.5 text-cyan-400 ${refreshing ? 'animate-spin' : ''}`} />
-            {refreshing ? 'Syncing...' : 'Refresh Live'}
+            <RefreshCw className={`w-3.5 h-3.5 text-[#087A35] ${refreshing ? 'animate-spin' : ''}`} />
+            {refreshing ? 'Syncing...' : 'Sync Queue'}
           </button>
+        }
+      />
 
-          {/* Filter buttons */}
-          <div className="inline-flex rounded-xl border border-white/15 bg-[#081124] p-1.5">
-            <button
-              onClick={() => setFilter('active')}
-              className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer ${
-                filter === 'active'
-                  ? 'bg-gradient-to-r from-blue-600 to-cyan-600 text-white shadow-md'
-                  : 'text-slate-400 hover:text-white'
-              }`}
-            >
-              Active Faults
-            </button>
-            <button
-              onClick={() => setFilter('all')}
-              className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer ${
-                filter === 'all'
-                  ? 'bg-gradient-to-r from-blue-600 to-cyan-600 text-white shadow-md'
-                  : 'text-slate-400 hover:text-white'
-              }`}
-            >
-              All History
-            </button>
-            <button
-              onClick={() => setFilter('Resolved')}
-              className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer ${
-                filter === 'Resolved'
-                  ? 'bg-gradient-to-r from-blue-600 to-cyan-600 text-white shadow-md'
-                  : 'text-slate-400 hover:text-white'
-              }`}
-            >
-              Resolved Only
-            </button>
-            <button
-              onClick={() => setFilter('Expired')}
-              className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer ${
-                filter === 'Expired'
-                  ? 'bg-gradient-to-r from-blue-600 to-cyan-600 text-white shadow-md'
-                  : 'text-slate-400 hover:text-white'
-              }`}
-            >
-              Expired
-            </button>
-          </div>
-        </div>
-      </div>
-
+      {/* Success Banner */}
       {successMsg && (
-        <div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs flex items-center gap-2.5">
-          <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-400" />
+        <div className="p-4 rounded-2xl bg-[#EAF5ED] border border-[#BDE3CA] text-[#087A35] text-xs font-semibold flex items-center gap-2.5 animate-in fade-in">
+          <CheckCircle2 className="w-4 h-4 text-[#087A35] shrink-0" />
           <span>{successMsg}</span>
         </div>
       )}
 
-      {/* Tickets Table */}
-      <div className="rounded-3xl border border-white/10 bg-[#0d182e]/80 backdrop-blur-xl shadow-2xl overflow-hidden">
-        <div className="p-4 border-b border-white/10 flex items-center justify-between text-xs text-slate-400">
-          <span className="font-semibold">
-            Showing <span className="text-white font-bold">{tickets.length}</span> tickets in this view
-          </span>
-          <span className="text-[11px] font-mono text-slate-500">
-            Last synced: {lastUpdated.toLocaleTimeString()}
-          </span>
+      {/* Filter Tabs */}
+      <div className="flex flex-wrap items-center justify-between gap-4 bg-white border border-[#E5EBE6] rounded-2xl p-3 shadow-sm">
+        <div className="flex items-center gap-1.5 text-xs font-semibold">
+          {[
+            { id: 'active', label: 'Active Queue' },
+            { id: 'all', label: 'All Tickets' },
+            { id: 'Resolved', label: 'Resolved Tickets' },
+            { id: 'Expired', label: 'Expired' }
+          ].map((tab) => (
+            <button
+              key={tab.id}
+              type="button"
+              onClick={() => setFilter(tab.id)}
+              className={`px-3.5 py-2 rounded-xl transition cursor-pointer ${
+                filter === tab.id
+                  ? 'bg-[#EAF5ED] text-[#087A35] font-bold border border-[#BDE3CA] shadow-sm'
+                  : 'text-[#647067] hover:text-[#172033]'
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
         </div>
 
+        <span className="text-[11px] text-[#647067] font-mono px-2">
+          Last synced: {lastUpdated.toLocaleTimeString()}
+        </span>
+      </div>
+
+      {/* Tickets Table */}
+      <div className="rounded-3xl border border-[#E5EBE6] bg-white shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
-            <thead className="bg-white/[0.03] text-slate-400 font-bold border-b border-white/10 uppercase tracking-wider text-[11px]">
+            <thead className="bg-[#F7F9F7] text-[#647067] font-bold border-b border-[#E5EBE6] uppercase tracking-wider text-[11px]">
               <tr>
                 <th className="px-6 py-4">Ticket ID</th>
-                <th className="px-6 py-4">Equipment Damaged</th>
-                <th className="px-6 py-4">Student Details</th>
-                <th className="px-6 py-4">Reported Date</th>
-                <th className="px-6 py-4">Current Status</th>
-                <th className="px-6 py-4 text-right">Actions</th>
+                <th className="px-6 py-4">Reported Instrument</th>
+                <th className="px-6 py-4">Student Reporter</th>
+                <th className="px-6 py-4">Fault Description</th>
+                <th className="px-6 py-4">Status</th>
+                <th className="px-6 py-4">Reported On</th>
+                <th className="px-6 py-4 text-right">Review Action</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-white/[0.06]">
+            <tbody className="divide-y divide-[#E5EBE6]">
               {loading ? (
                 <tr>
-                  <td colSpan="6" className="px-6 py-12 text-center text-slate-400">
-                    <div className="flex flex-col items-center justify-center gap-2">
-                      <Loader2 className="w-6 h-6 animate-spin text-cyan-400" />
-                      <span>Fetching ticket queue...</span>
-                    </div>
+                  <td colSpan="7" className="px-6 py-12 text-center text-[#647067]">
+                    <Loader2 className="w-6 h-6 animate-spin mx-auto text-[#087A35] mb-2" />
+                    Loading fault queue...
                   </td>
                 </tr>
               ) : tickets.length > 0 ? (
-                tickets.map((ticket) => (
-                  <tr key={ticket._id} className="hover:bg-white/[0.03] transition-colors">
-                    <td className="px-6 py-4 font-mono font-bold text-cyan-400 text-sm">
-                      {ticket.ticketId}
-                    </td>
+                tickets.map((t) => (
+                  <tr key={t._id} className="hover:bg-[#F7F9F7]/60 transition-colors">
                     <td className="px-6 py-4">
-                      <span className="font-bold text-white block text-sm">
-                        {ticket.equipmentId?.name || 'Equipment'}
-                      </span>
-                      <span className="font-mono text-[11px] text-slate-400">
-                        Location: {ticket.equipmentId?.location || 'Lab'} • SN: {ticket.equipmentId?.serialNumber || '—'}
+                      <span className="font-mono text-xs font-extrabold text-[#087A35] bg-[#EAF5ED] px-2.5 py-1 rounded-md border border-[#BDE3CA]">
+                        {t.ticketId}
                       </span>
                     </td>
-                    <td className="px-6 py-4 text-slate-300">
-                      <span className="font-semibold text-white block">{ticket.studentName}</span>
-                      <span className="text-[11px] text-slate-400 font-mono">
-                        Roll: {ticket.rollNumber} • {ticket.mobile}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 text-slate-300 font-mono">
-                      {new Date(ticket.createdAt).toLocaleDateString()}
-                    </td>
+
                     <td className="px-6 py-4">
-                      <TicketStatusBadge status={ticket.ticketStatus} />
+                      <span className="font-bold text-[#172033] block text-sm">
+                        {t.equipmentId?.name || 'Equipment'}
+                      </span>
+                      <span className="font-mono text-[11px] text-[#647067]">
+                        SN: {t.equipmentId?.serialNumber || 'N/A'} • {t.equipmentId?.location || ''}
+                      </span>
                     </td>
+
+                    <td className="px-6 py-4 space-y-0.5">
+                      <span className="font-semibold text-[#172033] block">{t.studentName}</span>
+                      <span className="font-mono text-[11px] text-[#647067] block">
+                        Roll: {t.rollNumber} • {t.mobile}
+                      </span>
+                    </td>
+
+                    <td className="px-6 py-4 max-w-xs">
+                      <p className="text-[#172033] truncate" title={t.description}>
+                        {t.description}
+                      </p>
+                      {t.photoUrl && (
+                        <span className="inline-flex items-center gap-1 text-[11px] text-[#087A35] font-semibold mt-0.5">
+                          <Camera className="w-3 h-3" /> Photo Attached
+                        </span>
+                      )}
+                    </td>
+
+                    <td className="px-6 py-4">
+                      <TicketStatusBadge status={t.ticketStatus} />
+                    </td>
+
+                    <td className="px-6 py-4 font-mono text-[#647067] text-[11px]">
+                      {new Date(t.createdAt).toLocaleDateString()}
+                    </td>
+
                     <td className="px-6 py-4 text-right">
                       <button
-                        onClick={() => handleOpenDetail(ticket)}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-300 border border-cyan-400/20 rounded-lg text-xs font-bold transition cursor-pointer"
+                        type="button"
+                        onClick={() => handleOpenDetail(t)}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#087A35] hover:bg-[#075C2B] text-white text-xs font-bold transition shadow-sm cursor-pointer"
                       >
                         <Eye className="w-3.5 h-3.5" />
-                        Inspect & Resolve
+                        Inspect &amp; Update
                       </button>
                     </td>
                   </tr>
                 ))
               ) : (
                 <tr>
-                  <td colSpan="6" className="px-6 py-12 text-center text-slate-400">
-                    <div className="flex flex-col items-center justify-center gap-2">
-                      <CheckCircle2 className="w-8 h-8 text-emerald-400/50" />
-                      <p className="text-sm font-medium text-slate-300">No tickets found in this queue filter.</p>
-                      <p className="text-xs text-slate-500">When students raise new fault reports, they will appear here automatically.</p>
-                    </div>
+                  <td colSpan="7">
+                    <EmptyState
+                      icon={AlertOctagon}
+                      title="No tickets in queue"
+                      description="There are currently no active fault reports matching this filter."
+                    />
                   </td>
                 </tr>
               )}
@@ -284,150 +255,152 @@ const TicketQueue = () => {
         </div>
       </div>
 
-      {/* Inspect & Transition Ticket Modal */}
-      {showModal && selectedTicket && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="bg-[#0f1d38] border border-white/15 rounded-3xl w-full max-w-2xl p-6 sm:p-7 shadow-2xl relative text-white max-h-[90vh] overflow-y-auto">
-            <button
-              onClick={() => setShowModal(false)}
-              className="absolute top-5 right-5 text-slate-400 hover:text-white cursor-pointer"
-            >
-              <X className="w-5 h-5" />
-            </button>
-
-            {/* Modal Header */}
-            <div className="flex items-center gap-3.5 mb-5 border-b border-white/10 pb-4">
-              <div className="w-11 h-11 rounded-2xl bg-rose-500/15 border border-rose-500/30 text-rose-400 flex items-center justify-center">
-                <AlertOctagon className="w-6 h-6" />
+      {/* ── Review & Update Status Modal ───────────────────────────────── */}
+      {selectedTicket && (
+        <Modal
+          isOpen={showModal}
+          onClose={() => setShowModal(false)}
+          title={`Ticket ${selectedTicket.ticketId}`}
+          subtitle={`Reported for: ${selectedTicket.equipmentId?.name || 'Instrument'}`}
+          maxWidth="max-w-2xl"
+        >
+          <div className="space-y-5">
+            
+            {/* Student details header */}
+            <div className="p-4 rounded-2xl bg-[#F7F9F7] border border-[#E5EBE6] grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+              <div>
+                <span className="text-[10px] text-[#647067] font-bold uppercase tracking-wider block">Student Name</span>
+                <span className="font-bold text-[#172033] mt-0.5 block">{selectedTicket.studentName}</span>
+                <span className="text-[11px] font-mono text-[#647067]">Roll: {selectedTicket.rollNumber}</span>
               </div>
               <div>
-                <h3 className="font-bold text-lg text-white">Fault Ticket Inspection</h3>
-                <span className="font-mono text-xs text-cyan-400">{selectedTicket.ticketId}</span>
+                <span className="text-[10px] text-[#647067] font-bold uppercase tracking-wider block">Phone Contact</span>
+                <span className="font-mono text-[#172033] font-semibold mt-0.5 block">{selectedTicket.mobile}</span>
+                <span className="text-[11px] text-[#647067]">{selectedTicket.email || 'No email provided'}</span>
+              </div>
+              <div>
+                <span className="text-[10px] text-[#647067] font-bold uppercase tracking-wider block">Current Status</span>
+                <div className="mt-1">
+                  <TicketStatusBadge status={selectedTicket.ticketStatus} />
+                </div>
               </div>
             </div>
 
-            <div className="grid sm:grid-cols-2 gap-5 mb-5">
-              {/* Evidence Photograph */}
+            {/* Reported Problem Description */}
+            <div>
+              <span className="text-xs font-bold text-[#172033] uppercase tracking-wider block mb-1.5">
+                Reported Malfunction / Damage Description
+              </span>
+              <p className="p-3.5 bg-[#F7F9F7] border border-[#E5EBE6] rounded-2xl text-xs sm:text-sm text-[#172033] leading-relaxed">
+                {selectedTicket.description}
+              </p>
+            </div>
+
+            {/* Damage Photograph Preview */}
+            {selectedTicket.photoUrl && (
               <div>
-                <span className="block font-bold text-slate-300 uppercase tracking-wider text-[10px] mb-2">
-                  Damage Photo Evidence:
+                <span className="text-xs font-bold text-[#172033] uppercase tracking-wider block mb-1.5">
+                  Damage Photograph (Uploaded by Student)
                 </span>
-                <div className="rounded-2xl overflow-hidden border border-white/15 bg-black/50 aspect-video flex items-center justify-center">
-                  {selectedTicket.photoUrl ? (
-                    <img
-                      src={selectedTicket.photoUrl}
-                      alt="Damaged component evidence"
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <span className="text-xs text-slate-500">No image attached</span>
-                  )}
+                <div className="p-3 bg-[#F7F9F7] border border-[#E5EBE6] rounded-2xl flex flex-col items-center gap-2">
+                  <img
+                    src={selectedTicket.photoUrl}
+                    alt="Damage proof"
+                    className="max-h-64 rounded-xl object-contain border border-[#E5EBE6] shadow-sm"
+                  />
+                  <a
+                    href={selectedTicket.photoUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-xs text-[#087A35] font-bold hover:underline inline-flex items-center gap-1"
+                  >
+                    <ExternalLink className="w-3.5 h-3.5" />
+                    Open Full-Resolution Photo in New Tab
+                  </a>
                 </div>
               </div>
+            )}
 
-              {/* Student & Fault Info */}
-              <div className="space-y-3.5 text-xs">
-                <div className="p-4 rounded-2xl bg-[#081124] border border-white/10 space-y-1.5">
-                  <span className="font-bold text-slate-300 uppercase tracking-wider text-[10px] block">
-                    Student Details:
-                  </span>
-                  <p className="text-white font-semibold flex items-center gap-2">
-                    <User className="w-3.5 h-3.5 text-cyan-400" /> {selectedTicket.studentName} (Roll: {selectedTicket.rollNumber})
-                  </p>
-                  <p className="text-slate-300 flex items-center gap-2 font-mono">
-                    <Phone className="w-3.5 h-3.5 text-slate-400" /> {selectedTicket.mobile}
-                  </p>
-                  <p className="text-slate-400 flex items-center gap-2 text-[11px] pt-1">
-                    <Calendar className="w-3.5 h-3.5 text-slate-400" /> Submitted:{' '}
-                    {new Date(selectedTicket.createdAt).toLocaleString()}
-                  </p>
-                </div>
-
-                <div>
-                  <span className="block font-bold text-slate-300 uppercase tracking-wider text-[10px] mb-1.5">
-                    Fault Description:
-                  </span>
-                  <div className="p-3.5 rounded-2xl bg-[#081124] border border-white/10 text-slate-200 leading-relaxed text-xs">
-                    {selectedTicket.description}
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Workflow Action Form */}
-            <form onSubmit={handleUpdateStatus} className="border-t border-white/10 pt-5 space-y-4">
-              <h4 className="font-bold text-xs text-cyan-300 uppercase tracking-wider flex items-center gap-2">
-                <Sparkles className="w-3.5 h-3.5" />
-                Update Ticket Status & Equipment Lifecycle
+            {/* Status Update Form */}
+            <form onSubmit={handleUpdateStatus} className="border-t border-[#E5EBE6] pt-4 space-y-4">
+              <h4 className="text-xs font-extrabold text-[#172033] uppercase tracking-wider">
+                Update Ticket Lifecycle Status
               </h4>
 
               <div>
-                <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">
-                  Transition Status
+                <label className="block text-xs font-bold text-[#647067] mb-1.5">
+                  Lifecycle Stage (OPEN → UNDER REVIEW → IN REPAIR → RESOLVED)
                 </label>
                 <select
                   value={newStatus}
                   onChange={(e) => setNewStatus(e.target.value)}
-                  className="w-full bg-[#081124] border border-white/15 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-cyan-400 transition"
+                  className="w-full bg-[#F7F9F7] border border-[#E5EBE6] rounded-xl px-4 py-2.5 text-sm text-[#172033] font-semibold focus:outline-none focus:border-[#087A35] focus:bg-white transition cursor-pointer"
                 >
-                  <option value="Open" className="bg-slate-900 text-white">Open / Pending</option>
-                  <option value="Under Review" className="bg-slate-900 text-white">Under Review</option>
-                  <option value="In Repair" className="bg-slate-900 text-white">In Repair (Sets equipment to Under Repair)</option>
-                  <option value="Resolved" className="bg-slate-900 text-white">Resolved (Closes fault ticket)</option>
-                  <option value="Expired" className="bg-slate-900 text-white">Expired</option>
+                  <option value="Open">Open (Initial Submission)</option>
+                  <option value="Under Review">Under Review (Inspecting Hardware)</option>
+                  <option value="In Repair">In Repair (Servicing Malfunction)</option>
+                  <option value="Resolved">Resolved (Repaired & Operational)</option>
                 </select>
               </div>
 
-              {newStatus === 'Resolved' && (
-                <>
-                  <div>
-                    <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">
-                      Resolution Notes / Work Done
-                    </label>
-                    <textarea
-                      rows="2"
-                      required
-                      placeholder="e.g. Replaced damaged fuse on channel 1, tested with 1kHz calibration wave, equipment ready."
-                      value={resolutionNotes}
-                      onChange={(e) => setResolutionNotes(e.target.value)}
-                      className="w-full bg-[#081124] border border-white/15 rounded-xl px-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400 transition"
-                    ></textarea>
-                  </div>
+              <div>
+                <label className="block text-xs font-bold text-[#647067] mb-1.5">
+                  Resolution Notes / Technical Remarks
+                </label>
+                <textarea
+                  rows="3"
+                  placeholder="e.g. Soldered broken contact on Channel 1 probe. Tested waveform output with 1kHz calibration square wave."
+                  value={resolutionNotes}
+                  onChange={(e) => setResolutionNotes(e.target.value)}
+                  className="w-full bg-[#F7F9F7] border border-[#E5EBE6] rounded-xl px-4 py-2.5 text-sm text-[#172033] placeholder-[#647067]/60 focus:outline-none focus:border-[#087A35] focus:bg-white transition"
+                ></textarea>
+              </div>
 
-                  <label className="flex items-center gap-2.5 text-xs text-slate-300 cursor-pointer p-3 rounded-xl bg-white/[0.03] border border-white/10">
+              {newStatus === 'Resolved' && (
+                <div className="p-3.5 bg-[#EAF5ED] border border-[#BDE3CA] rounded-xl">
+                  <label className="flex items-center gap-2.5 cursor-pointer">
                     <input
                       type="checkbox"
                       checked={restoreOperational}
                       onChange={(e) => setRestoreOperational(e.target.checked)}
-                      className="w-4 h-4 rounded border-white/20 text-cyan-500 focus:ring-0 bg-[#081124]"
+                      className="w-4 h-4 text-[#087A35] accent-[#087A35] rounded"
                     />
-                    <span>
-                      Restore equipment operational status to <strong>'Ready to Use'</strong> (if no other open tickets exist)
+                    <span className="text-xs font-bold text-[#087A35]">
+                      Restore equipment operational status to "Ready to Use"
                     </span>
                   </label>
-                </>
+                </div>
               )}
 
               <div className="pt-2 flex items-center justify-end gap-3">
                 <button
                   type="button"
                   onClick={() => setShowModal(false)}
-                  className="px-4 py-2 text-xs font-bold text-slate-400 hover:text-white cursor-pointer"
+                  className="px-4 py-2.5 rounded-xl text-xs font-bold text-[#647067] hover:bg-slate-100 transition"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={updating}
-                  className="px-5 py-2.5 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 text-white rounded-xl text-xs font-bold shadow-lg shadow-cyan-500/20 transition disabled:opacity-50 cursor-pointer"
+                  className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#087A35] hover:bg-[#075C2B] text-white rounded-xl text-xs font-bold transition shadow-sm disabled:opacity-50 cursor-pointer"
                 >
-                  {updating ? 'Updating & Notifying Student...' : 'Save & Send Status Notification'}
+                  {updating ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Updating & Notifying Student...
+                    </>
+                  ) : (
+                    'Update Status & Notify Student'
+                  )}
                 </button>
               </div>
             </form>
+
           </div>
-        </div>
+        </Modal>
       )}
+
     </div>
   );
 };
