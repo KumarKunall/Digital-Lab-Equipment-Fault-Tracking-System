@@ -8,14 +8,17 @@ import {
   Phone,
   CheckCircle2,
   AlertCircle,
-  X,
   Building2,
   Loader2,
   KeyRound,
   Copy,
-  LayoutDashboard,
-  ShieldCheck
+  ShieldCheck,
+  UserCheck,
+  UserX
 } from 'lucide-react';
+import PageHeader from '../../components/common/PageHeader';
+import Modal from '../../components/common/Modal';
+import EmptyState from '../../components/common/EmptyState';
 
 const ManageAssistants = () => {
   const [assistants, setAssistants] = useState([]);
@@ -102,207 +105,168 @@ const ManageAssistants = () => {
     }
   };
 
-  const copyCredentials = () => {
-    if (successInfo) {
-      const text = `Assistant ID: ${successInfo.assistantId}\nEmail: ${successInfo.email}\nTemporary Password: ${successInfo.tempPassword}\nLogin: http://localhost:5173/login`;
-      navigator.clipboard.writeText(text);
+  const handleCopyPassword = () => {
+    if (successInfo?.tempPassword) {
+      navigator.clipboard.writeText(successInfo.tempPassword);
       setCopied(true);
-      setTimeout(() => setCopied(false), 3000);
+      setTimeout(() => setCopied(false), 2000);
     }
   };
 
-  // Deactivated assistants sabse niche aaye (Active assistants first, Deactivated at the bottom)
-  const sortedAssistants = [...assistants].sort((a, b) => {
-    if (a.isActive === b.isActive) {
-      return a.name.localeCompare(b.name);
-    }
-    return a.isActive ? -1 : 1;
-  });
-
   return (
-    <div className="p-6 sm:p-8 max-w-7xl mx-auto w-full space-y-7">
+    <div className="p-5 sm:p-8 max-w-7xl mx-auto w-full space-y-7">
       
-      {/* Header Banner */}
-      <div className="relative rounded-3xl p-7 border border-white/10 bg-gradient-to-r from-[#111f38]/90 via-[#0d192e]/90 to-[#0a1426]/90 backdrop-blur-xl shadow-2xl overflow-hidden flex flex-col sm:flex-row sm:items-center justify-between gap-5">
-        <div>
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-400/20 text-cyan-300 text-[11px] font-bold tracking-wider uppercase mb-2">
-            <Users className="w-3.5 h-3.5 text-cyan-400" />
-            STAFF & LAB ASSISTANT DIRECTORY
-          </div>
-          <h2 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
-            Manage Lab Assistants
-          </h2>
-          <p className="text-xs sm:text-sm text-slate-400 mt-1 max-w-2xl leading-relaxed">
-            Create Lab Assistant accounts directly. The system automatically assigns a unique Assistant ID, generates temporary credentials, and dispatches activation instructions via email.
-          </p>
-        </div>
-
-        <div className="flex items-center gap-3 shrink-0 self-start sm:self-auto">
-          <Link
-            to="/admin"
-            className="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-white/10 hover:bg-white/15 text-white text-xs font-semibold border border-white/10 transition"
-          >
-            <LayoutDashboard className="w-3.5 h-3.5 text-cyan-400" />
-            Go to Main Dashboard
-          </Link>
+      {/* Header */}
+      <PageHeader
+        badge="Staff Authorization"
+        badgeIcon={Users}
+        title="Manage Lab Assistants"
+        description="Authorize lab assistants, assign exclusive laboratory boundaries, and monitor operational credentials."
+        actions={
           <button
-            onClick={() => { setShowAddModal(true); setSuccessInfo(null); }}
-            className="inline-flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 text-white rounded-xl text-xs font-bold shadow-lg shadow-cyan-500/20 transition-all transform hover:-translate-y-0.5 cursor-pointer"
+            type="button"
+            onClick={() => {
+              setFormError('');
+              setShowAddModal(true);
+            }}
+            className="inline-flex items-center gap-2 px-4 py-2.5 bg-[#087A35] hover:bg-[#075C2B] text-white rounded-xl text-xs font-bold transition shadow-sm cursor-pointer"
           >
             <Plus className="w-4 h-4" />
             Add Lab Assistant
           </button>
-        </div>
-      </div>
+        }
+      />
 
-      {/* Success Banner (Displaying Assistant ID & Temp Password) */}
-      {successInfo && (
-        <div className="p-6 rounded-3xl bg-[#0f2438] border border-cyan-400/30 text-white shadow-xl space-y-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center">
-                <CheckCircle2 className="w-6 h-6" />
-              </div>
-              <div>
-                <h4 className="font-bold text-sm text-emerald-300">
-                  Assistant '{successInfo.name}' Created Successfully!
-                </h4>
-                <p className="text-xs text-slate-300">
-                  Assigned to <span className="font-semibold text-white">{successInfo.assignedLab?.labName || 'Laboratory'}</span>. An automated credentials email was sent to {successInfo.email}.
-                </p>
-              </div>
-            </div>
-            <button
-              onClick={copyCredentials}
-              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-white/10 hover:bg-white/20 text-xs font-semibold rounded-lg transition"
-            >
-              <Copy className="w-3.5 h-3.5" />
-              {copied ? 'Copied!' : 'Copy Credentials'}
-            </button>
-          </div>
-
-          <div className="grid sm:grid-cols-3 gap-3 p-4 rounded-2xl bg-black/40 border border-white/10 font-mono text-xs">
-            <div>
-              <span className="text-[10px] text-slate-400 uppercase tracking-wider block">Assistant ID</span>
-              <span className="text-cyan-300 font-bold text-sm">{successInfo.assistantId || 'AST-N/A'}</span>
-            </div>
-            <div>
-              <span className="text-[10px] text-slate-400 uppercase tracking-wider block">Login Email</span>
-              <span className="text-white font-bold text-sm">{successInfo.email}</span>
-            </div>
-            <div>
-              <span className="text-[10px] text-slate-400 uppercase tracking-wider block">Temporary Password</span>
-              <span className="text-amber-400 font-bold text-sm">{successInfo.tempPassword}</span>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Table Error Banner */}
       {tableError && (
-        <div className="p-4 rounded-2xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs flex items-center gap-2.5">
+        <div className="p-4 rounded-2xl bg-red-50 border border-red-200 text-red-700 text-xs flex items-center gap-2">
           <AlertCircle className="w-4 h-4 shrink-0" />
           <span>{tableError}</span>
-          <button onClick={() => setTableError('')} className="ml-auto text-rose-400 hover:text-white">
-            <X className="w-4 h-4" />
-          </button>
         </div>
       )}
 
-      {/* Assistants Table */}
-      <div className="rounded-3xl border border-white/10 bg-[#0d182e]/80 backdrop-blur-xl shadow-2xl overflow-hidden">
+      {/* Staff Table */}
+      <div className="rounded-3xl border border-[#E5EBE6] bg-white shadow-sm overflow-hidden">
+        <div className="p-6 border-b border-[#E5EBE6] flex items-center justify-between">
+          <div>
+            <h3 className="text-base font-extrabold text-[#172033]">Authorized Laboratory Staff</h3>
+            <p className="text-xs text-[#647067] mt-0.5">
+              Each assistant is isolated to manage equipment and tickets for their designated laboratory facility.
+            </p>
+          </div>
+          <span className="text-xs font-bold text-[#087A35] bg-[#EAF5ED] px-3 py-1 rounded-full border border-[#BDE3CA]">
+            {assistants.length} Registered Staff
+          </span>
+        </div>
+
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
-            <thead className="bg-white/[0.03] text-slate-400 font-bold border-b border-white/10 uppercase tracking-wider text-[11px]">
+            <thead className="bg-[#F7F9F7] text-[#647067] font-bold border-b border-[#E5EBE6] uppercase tracking-wider text-[11px]">
               <tr>
-                <th className="px-6 py-4">Assistant ID</th>
                 <th className="px-6 py-4">Assistant Name</th>
-                <th className="px-6 py-4">Email Address</th>
-                <th className="px-6 py-4">Mobile</th>
+                <th className="px-6 py-4">Contact Info</th>
                 <th className="px-6 py-4">Assigned Laboratory</th>
-                <th className="px-6 py-4">Account Status</th>
+                <th className="px-6 py-4">Status</th>
                 <th className="px-6 py-4 text-right">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-white/[0.06]">
+            <tbody className="divide-y divide-[#E5EBE6]">
               {loading ? (
                 <tr>
-                  <td colSpan="7" className="px-6 py-10 text-center text-slate-400">
-                    <div className="flex items-center justify-center gap-2">
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                      Loading assistants...
-                    </div>
+                  <td colSpan="5" className="px-6 py-12 text-center text-[#647067]">
+                    <Loader2 className="w-6 h-6 animate-spin mx-auto text-[#087A35] mb-2" />
+                    Loading staff records...
                   </td>
                 </tr>
-              ) : sortedAssistants.length > 0 ? (
-                sortedAssistants.map((ast) => {
-                  const astId = ast._id || ast.id;
-                  const isToggling = togglingId === astId;
-                  return (
-                    <tr key={astId} className={`hover:bg-white/[0.03] transition-colors ${!ast.isActive ? 'opacity-70 bg-black/20' : ''}`}>
-                      <td className="px-6 py-4 font-mono font-bold text-cyan-400 text-xs">
-                        {ast.assistantId || 'AST-LEGACY'}
-                      </td>
-                      <td className="px-6 py-4 font-bold text-white text-sm">{ast.name}</td>
-                      <td className="px-6 py-4 text-slate-300">
-                        <span className="flex items-center gap-2">
-                          <Mail className="w-3.5 h-3.5 text-cyan-400" />
-                          {ast.email}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 text-slate-300 font-mono">
-                        <span className="flex items-center gap-2">
-                          <Phone className="w-3.5 h-3.5 text-slate-500" />
-                          {ast.mobile}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-cyan-500/10 border border-cyan-400/20 text-cyan-300 font-semibold text-xs">
-                          <Building2 className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
-                          {ast.assignedLabId?.labName || 'Unassigned'}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4">
-                        {ast.isActive ? (
-                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
-                            <CheckCircle2 className="w-3.5 h-3.5" />
-                            Active
+              ) : assistants.length > 0 ? (
+                assistants.map((ast) => (
+                  <tr key={ast._id} className="hover:bg-[#F7F9F7]/60 transition-colors">
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-9 h-9 rounded-xl bg-[#EAF5ED] text-[#087A35] border border-[#BDE3CA] flex items-center justify-center shrink-0 font-bold">
+                          {ast.name ? ast.name.charAt(0).toUpperCase() : 'A'}
+                        </div>
+                        <div>
+                          <span className="font-bold text-[#172033] block text-sm">{ast.name}</span>
+                          <span className="text-[11px] text-[#647067] font-mono">ID: {ast._id.slice(-6).toUpperCase()}</span>
+                        </div>
+                      </div>
+                    </td>
+
+                    <td className="px-6 py-4 space-y-0.5">
+                      <div className="flex items-center gap-1.5 text-[#172033]">
+                        <Mail className="w-3.5 h-3.5 text-[#087A35]" />
+                        <span>{ast.email}</span>
+                      </div>
+                      <div className="flex items-center gap-1.5 text-[#647067] font-mono text-[11px]">
+                        <Phone className="w-3.5 h-3.5 text-[#647067]" />
+                        <span>{ast.mobile || 'N/A'}</span>
+                      </div>
+                    </td>
+
+                    <td className="px-6 py-4">
+                      {ast.assignedLabId ? (
+                        <div>
+                          <span className="font-semibold text-[#172033] block">
+                            {ast.assignedLabId.labName || 'Assigned Lab'}
                           </span>
+                          <span className="font-mono text-[11px] text-[#087A35] font-bold">
+                            {ast.assignedLabId.labId} • {ast.assignedLabId.labBlock}
+                          </span>
+                        </div>
+                      ) : (
+                        <span className="text-slate-400 italic">Unassigned</span>
+                      )}
+                    </td>
+
+                    <td className="px-6 py-4">
+                      {ast.isActive ? (
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-[#EAF5ED] text-[#087A35] border border-[#BDE3CA]">
+                          <span className="w-1.5 h-1.5 rounded-full bg-[#087A35]" />
+                          Active
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-600 border border-slate-200">
+                          Inactive
+                        </span>
+                      )}
+                    </td>
+
+                    <td className="px-6 py-4 text-right">
+                      <button
+                        type="button"
+                        disabled={togglingId === ast._id}
+                        onClick={() => handleToggleStatus(ast._id, ast.isActive)}
+                        className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition cursor-pointer disabled:opacity-50 ${
+                          ast.isActive
+                            ? 'text-red-700 bg-red-50 hover:bg-red-100 border border-red-200'
+                            : 'text-[#087A35] bg-[#EAF5ED] hover:bg-[#DDF2E3] border border-[#BDE3CA]'
+                        }`}
+                      >
+                        {togglingId === ast._id ? (
+                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        ) : ast.isActive ? (
+                          <>
+                            <UserX className="w-3.5 h-3.5" />
+                            Deactivate
+                          </>
                         ) : (
-                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-slate-800 text-slate-400 border border-white/10">
-                            Deactivated
-                          </span>
+                          <>
+                            <UserCheck className="w-3.5 h-3.5" />
+                            Reactivate
+                          </>
                         )}
-                      </td>
-                      <td className="px-6 py-4 text-right">
-                        <button
-                          onClick={() => handleToggleStatus(astId, ast.isActive)}
-                          disabled={isToggling}
-                          className={`text-xs font-bold px-3 py-1.5 rounded-lg border transition disabled:opacity-50 cursor-pointer ${
-                            ast.isActive
-                              ? 'text-rose-300 hover:text-white bg-rose-500/15 hover:bg-rose-500/25 border-rose-500/30'
-                              : 'text-emerald-300 hover:text-white bg-emerald-500/15 hover:bg-emerald-500/25 border-emerald-500/30'
-                          }`}
-                        >
-                          {isToggling ? 'Updating...' : ast.isActive ? 'Deactivate' : 'Reactivate'}
-                        </button>
-                      </td>
-                    </tr>
-                  );
-                })
+                      </button>
+                    </td>
+                  </tr>
+                ))
               ) : (
                 <tr>
-                  <td colSpan="7" className="px-6 py-14 text-center">
-                    <div className="flex flex-col items-center gap-3 text-slate-500">
-                      <Users className="w-10 h-10 opacity-30" />
-                      <p className="text-sm">No lab assistants registered yet.</p>
-                      <button
-                        onClick={() => setShowAddModal(true)}
-                        className="text-cyan-400 hover:text-cyan-300 text-xs font-semibold underline underline-offset-2"
-                      >
-                        Add the first assistant →
-                      </button>
-                    </div>
+                  <td colSpan="5">
+                    <EmptyState
+                      icon={Users}
+                      title="No assistants registered"
+                      description="Create an assistant account to assign them to a laboratory."
+                    />
                   </td>
                 </tr>
               )}
@@ -311,119 +275,160 @@ const ManageAssistants = () => {
         </div>
       </div>
 
-      {/* Direct Add Assistant Modal */}
-      {showAddModal && (
-        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="bg-[#0f1d38] border border-white/15 rounded-3xl w-full max-w-md p-6 sm:p-7 shadow-2xl relative text-white">
-            <button
-              onClick={() => { setShowAddModal(false); setFormError(''); }}
-              className="absolute top-5 right-5 text-slate-400 hover:text-white"
-            >
-              <X className="w-5 h-5" />
-            </button>
+      {/* Add Assistant Modal */}
+      <Modal
+        isOpen={showAddModal}
+        onClose={() => setShowAddModal(false)}
+        title="Register New Lab Assistant"
+        subtitle="Staff member will receive auto-generated credentials and laboratory isolation permissions"
+      >
+        {formError && (
+          <div className="p-3.5 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs flex items-center gap-2 mb-4">
+            <AlertCircle className="w-4 h-4 shrink-0" />
+            <span>{formError}</span>
+          </div>
+        )}
 
-            <div className="flex items-center gap-3.5 mb-5">
-              <div className="w-11 h-11 rounded-2xl bg-cyan-500/15 border border-cyan-400/25 text-cyan-400 flex items-center justify-center">
-                <Users className="w-6 h-6" />
-              </div>
+        <form onSubmit={handleCreateAssistant} className="space-y-4">
+          <div>
+            <label className="block text-xs font-bold text-[#172033] uppercase tracking-wider mb-1.5">
+              Full Name
+            </label>
+            <input
+              type="text"
+              required
+              placeholder="e.g. Dr. Rajesh Sharma"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className="w-full bg-[#F7F9F7] border border-[#E5EBE6] rounded-xl px-4 py-2.5 text-sm text-[#172033] placeholder-[#647067]/60 focus:outline-none focus:border-[#087A35] focus:bg-white transition"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold text-[#172033] uppercase tracking-wider mb-1.5">
+              Work Email Address
+            </label>
+            <input
+              type="email"
+              required
+              placeholder="e.g. rajesh@univ.edu"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="w-full bg-[#F7F9F7] border border-[#E5EBE6] rounded-xl px-4 py-2.5 text-sm text-[#172033] placeholder-[#647067]/60 focus:outline-none focus:border-[#087A35] focus:bg-white transition"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold text-[#172033] uppercase tracking-wider mb-1.5">
+              Mobile Contact Number
+            </label>
+            <input
+              type="tel"
+              required
+              placeholder="e.g. 9876543210"
+              value={mobile}
+              onChange={(e) => setMobile(e.target.value)}
+              className="w-full bg-[#F7F9F7] border border-[#E5EBE6] rounded-xl px-4 py-2.5 text-sm text-[#172033] placeholder-[#647067]/60 focus:outline-none focus:border-[#087A35] focus:bg-white transition font-mono"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold text-[#172033] uppercase tracking-wider mb-1.5">
+              Assign to Laboratory (Isolation Boundary)
+            </label>
+            <select
+              required
+              value={assignedLabId}
+              onChange={(e) => setAssignedLabId(e.target.value)}
+              className="w-full bg-[#F7F9F7] border border-[#E5EBE6] rounded-xl px-4 py-2.5 text-sm text-[#172033] focus:outline-none focus:border-[#087A35] focus:bg-white transition cursor-pointer"
+            >
+              <option value="">-- Select Campus Laboratory --</option>
+              {labs
+                .filter((l) => l.isActive)
+                .map((lab) => (
+                  <option key={lab._id} value={lab._id}>
+                    {lab.labName} ({lab.labId} • {lab.labBlock})
+                  </option>
+                ))}
+            </select>
+          </div>
+
+          <div className="pt-2 flex items-center justify-end gap-3">
+            <button
+              type="button"
+              onClick={() => setShowAddModal(false)}
+              className="px-4 py-2.5 rounded-xl text-xs font-bold text-[#647067] hover:bg-slate-100 transition"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={submitLoading}
+              className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#087A35] hover:bg-[#075C2B] text-white rounded-xl text-xs font-bold transition shadow-sm disabled:opacity-50"
+            >
+              {submitLoading ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Creating Staff Account...
+                </>
+              ) : (
+                'Create Assistant Account'
+              )}
+            </button>
+          </div>
+        </form>
+      </Modal>
+
+      {/* Account Created Success Modal with Temporary Password */}
+      {successInfo && (
+        <Modal
+          isOpen={true}
+          onClose={() => setSuccessInfo(null)}
+          title="Staff Account Created Successfully"
+          subtitle="An account has been generated. Provide these login details to the assistant."
+        >
+          <div className="space-y-4">
+            <div className="p-4 bg-[#EAF5ED] border border-[#BDE3CA] rounded-2xl flex items-center gap-3">
+              <CheckCircle2 className="w-6 h-6 text-[#087A35] shrink-0" />
               <div>
-                <h3 className="font-bold text-lg text-white">Create Lab Assistant</h3>
-                <p className="text-xs text-slate-400">Account will be activated and emailed automatically</p>
+                <p className="text-xs font-bold text-[#087A35]">{successInfo.name}</p>
+                <p className="text-xs text-[#647067]">{successInfo.email}</p>
               </div>
             </div>
 
-            {formError && (
-              <div className="mb-4 p-3 rounded-xl bg-rose-500/15 border border-rose-500/30 text-rose-300 text-xs flex items-center gap-2">
-                <AlertCircle className="w-4 h-4 shrink-0" />
-                <span>{formError}</span>
-              </div>
-            )}
-
-            <form onSubmit={handleCreateAssistant} className="space-y-4">
-              <div>
-                <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">
-                  Full Name
-                </label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. Rahul Sharma"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  className="w-full bg-[#081124] border border-white/15 rounded-xl px-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400 transition"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">
-                  Official Email Address
-                </label>
-                <input
-                  type="email"
-                  required
-                  placeholder="e.g. rahul@labtrack.edu"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="w-full bg-[#081124] border border-white/15 rounded-xl px-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400 transition"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">
-                  Mobile Number
-                </label>
-                <input
-                  type="tel"
-                  required
-                  placeholder="e.g. 9876543210"
-                  value={mobile}
-                  onChange={(e) => setMobile(e.target.value)}
-                  className="w-full bg-[#081124] border border-white/15 rounded-xl px-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400 transition"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">
-                  Assign to Laboratory (Strict Isolation)
-                </label>
-                <select
-                  required
-                  value={assignedLabId}
-                  onChange={(e) => setAssignedLabId(e.target.value)}
-                  className="w-full bg-[#081124] border border-white/15 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-cyan-400 transition"
-                >
-                  <option value="">Select physical laboratory...</option>
-                  {labs
-                    .filter((l) => l.isActive)
-                    .map((lab) => (
-                      <option key={lab._id} value={lab._id}>
-                        {lab.labName} ({lab.labId} - {lab.labBlock})
-                      </option>
-                    ))}
-                </select>
-              </div>
-
-              <div className="pt-3 flex items-center justify-end gap-3">
+            <div className="p-4 bg-[#F7F9F7] border border-[#E5EBE6] rounded-2xl space-y-2">
+              <span className="text-[10px] text-[#647067] font-bold uppercase tracking-wider block">
+                Temporary Account Password
+              </span>
+              <div className="flex items-center justify-between">
+                <span className="font-mono text-base font-extrabold text-[#087A35]">
+                  {successInfo.tempPassword}
+                </span>
                 <button
                   type="button"
-                  onClick={() => { setShowAddModal(false); setFormError(''); }}
-                  className="px-4 py-2 text-xs font-bold text-slate-400 hover:text-white"
+                  onClick={handleCopyPassword}
+                  className="px-3 py-1.5 bg-white border border-[#CBD5E1] hover:border-[#087A35] rounded-xl text-xs font-bold text-[#172033] flex items-center gap-1.5 transition cursor-pointer shadow-sm"
                 >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={submitLoading}
-                  className="inline-flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 text-white rounded-xl text-xs font-bold shadow-lg shadow-cyan-500/20 transition disabled:opacity-50"
-                >
-                  {submitLoading && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
-                  {submitLoading ? 'Registering...' : 'Create Assistant & Send Credentials'}
+                  <Copy className="w-3.5 h-3.5 text-[#087A35]" />
+                  {copied ? 'Copied!' : 'Copy'}
                 </button>
               </div>
-            </form>
+              <p className="text-[11px] text-[#647067]">
+                The assistant will be required to establish a permanent password upon first login.
+              </p>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setSuccessInfo(null)}
+              className="w-full py-2.5 bg-[#087A35] hover:bg-[#075C2B] text-white font-bold rounded-xl text-xs transition"
+            >
+              Done & Return to List
+            </button>
           </div>
-        </div>
+        </Modal>
       )}
+
     </div>
   );
 };
