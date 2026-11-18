@@ -14,10 +14,8 @@ import {
   X,
   ShieldCheck,
   Wrench,
-  FlaskConical,
   GraduationCap,
   ChevronRight,
-  Sparkles,
   ArrowRightCircle
 } from 'lucide-react';
 
@@ -63,72 +61,59 @@ const DashboardLayout = () => {
   const navLinks = isAdmin ? adminNav : isAssistant ? assistantNav : studentNav;
 
   return (
-    <div className="min-h-screen bg-[#080F20] text-slate-100 flex flex-col md:flex-row relative selection:bg-cyan-500/30 selection:text-cyan-200">
+    <div className="min-h-screen bg-[#F7F9F7] text-[#172033] flex flex-col md:flex-row relative">
       
-      {/* Ambient background glows */}
-      <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
-        <div className="absolute top-0 right-1/4 w-[450px] h-[450px] bg-blue-600/10 rounded-full blur-[120px]" />
-        <div className="absolute bottom-10 left-1/4 w-[350px] h-[350px] bg-cyan-600/10 rounded-full blur-[100px]" />
-        <div 
-          className="absolute inset-0 opacity-[0.03]"
-          style={{
-            backgroundImage: `linear-gradient(#94a3b8 1px, transparent 1px), linear-gradient(90deg, #94a3b8 1px, transparent 1px)`,
-            backgroundSize: '50px 50px'
-          }}
-        />
-      </div>
-
       {/* Desktop Sidebar */}
-      <aside className="hidden md:flex flex-col w-64 bg-[#0a1329]/90 border-r border-white/[0.08] backdrop-blur-xl z-20 shrink-0">
+      <aside className="hidden md:flex flex-col w-64 bg-white border-r border-[#E5EBE6] z-20 shrink-0">
         
         {/* Brand Header */}
-        <div className="p-6 border-b border-white/[0.08]">
+        <div className="p-5 border-b border-[#E5EBE6]">
           <Link to="/" className="flex items-center gap-3 group">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center text-white shadow-lg shadow-cyan-500/20 transition-transform group-hover:scale-105">
-              <FlaskConical size={21} />
+            <div className="w-10 h-10 rounded-xl bg-[#EAF5ED] border border-[#BDE3CA] flex items-center justify-center text-[#087A35] transition-transform group-hover:scale-105 shrink-0">
+              <img src="/favicon.svg" alt="LabEquip" className="w-7 h-7" />
             </div>
-            <div>
-              <h1 className="text-base font-bold tracking-tight text-white flex items-center gap-1">
-                Lab<span className="text-cyan-400">Track</span>
+            <div className="min-w-0">
+              <h1 className="text-base font-extrabold tracking-tight text-[#172033] flex items-center gap-0.5">
+                Lab<span className="text-[#087A35]">Equip</span>
               </h1>
-              <p className="text-[10px] text-slate-400 tracking-wider font-semibold uppercase">
-                {isAdmin ? 'Administrator' : isAssistant ? 'Lab Assistant' : 'Student Portal'}
+              <p className="text-[10px] text-[#647067] tracking-wider font-bold uppercase truncate">
+                {isAdmin ? 'System Admin' : isAssistant ? 'Lab Assistant' : 'Student Portal'}
               </p>
             </div>
           </Link>
         </div>
 
-        {/* Go to Main Dashboard Button (Requirement 4.B) */}
+        {/* Go to Main Dashboard Button */}
         <div className="px-4 pt-4">
           <button
             onClick={() => navigate(mainDashboardPath)}
-            className="w-full inline-flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-400/25 text-cyan-300 text-xs font-bold transition shadow-sm cursor-pointer"
+            className="w-full inline-flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl bg-[#EAF5ED] hover:bg-[#DDF2E3] border border-[#BDE3CA] text-[#087A35] text-xs font-bold transition shadow-sm cursor-pointer"
           >
-            <ArrowRightCircle className="w-4 h-4 text-cyan-400" />
+            <ArrowRightCircle className="w-4 h-4 text-[#087A35]" />
             Go to Main Dashboard
           </button>
         </div>
 
         {/* Assigned Lab Banner (For Assistants) */}
         {isAssistant && assignedLab && (
-          <div className="mx-4 my-3 p-3 rounded-xl bg-blue-500/[0.08] border border-blue-400/20 text-xs">
-            <span className="text-cyan-400 font-bold block uppercase tracking-wider text-[9px] flex items-center gap-1">
-              <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse" />
+          <div className="mx-4 my-3 p-3.5 rounded-2xl bg-[#F7F9F7] border border-[#E5EBE6] text-xs">
+            <span className="text-[#087A35] font-bold block uppercase tracking-wider text-[9px] flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-[#087A35] animate-pulse" />
               Assigned Laboratory
             </span>
-            <div className="text-white font-semibold text-sm mt-1 truncate">
+            <div className="text-[#172033] font-bold text-sm mt-1 truncate">
               {assignedLab.labName || 'Assigned Lab'}
             </div>
-            <span className="text-slate-400 text-[11px] block mt-0.5 font-mono">
+            <span className="text-[#647067] text-[11px] block mt-0.5 font-mono">
               Code: {assignedLab.labId || 'LAB'} • {assignedLab.labBlock || ''}
             </span>
           </div>
         )}
 
         {/* Navigation Links */}
-        <nav className="flex-1 px-3 py-4 space-y-1.5">
-          <p className="px-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2.5">
-            Menu Navigation
+        <nav className="flex-1 px-3 py-4 space-y-1.5 overflow-y-auto">
+          <p className="px-3 text-[10px] font-bold text-[#647067] uppercase tracking-wider mb-2">
+            Navigation Menu
           </p>
           {navLinks.map((item) => (
             <NavLink
@@ -138,32 +123,32 @@ const DashboardLayout = () => {
               className={({ isActive }) =>
                 `flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all ${
                   isActive
-                    ? 'bg-gradient-to-r from-blue-600 to-cyan-600 text-white shadow-md shadow-cyan-500/20'
-                    : 'text-slate-400 hover:text-white hover:bg-white/[0.05]'
+                    ? 'bg-[#EAF5ED] text-[#087A35] font-bold border-l-4 border-[#087A35]'
+                    : 'text-[#647067] hover:text-[#172033] hover:bg-[#F7F9F7]'
                 }`
               }
             >
               <div className="flex items-center gap-3">
-                <item.icon className="w-4 h-4" />
+                <item.icon className="w-4 h-4 shrink-0" />
                 <span>{item.label}</span>
               </div>
-              <ChevronRight className="w-3 h-3 opacity-50" />
+              <ChevronRight className="w-3.5 h-3.5 opacity-40" />
             </NavLink>
           ))}
         </nav>
 
         {/* User Card & Logout */}
-        <div className="p-4 border-t border-white/[0.08] bg-black/20">
+        <div className="p-4 border-t border-[#E5EBE6] bg-white">
           <div className="flex items-center justify-between mb-3 px-1">
             <div className="truncate">
-              <p className="text-xs font-bold text-white truncate">{user?.name}</p>
-              <span className="inline-flex items-center gap-1 text-[11px] text-cyan-400 font-medium">
+              <p className="text-xs font-bold text-[#172033] truncate">{user?.name}</p>
+              <span className="inline-flex items-center gap-1 text-[11px] text-[#087A35] font-semibold mt-0.5">
                 {isAdmin ? (
-                  <ShieldCheck className="w-3 h-3" />
+                  <ShieldCheck className="w-3 h-3 text-[#087A35]" />
                 ) : isAssistant ? (
-                  <Wrench className="w-3 h-3" />
+                  <Wrench className="w-3 h-3 text-[#087A35]" />
                 ) : (
-                  <GraduationCap className="w-3 h-3 text-violet-400" />
+                  <GraduationCap className="w-3 h-3 text-blue-600" />
                 )}
                 {user?.role}
               </span>
@@ -171,7 +156,7 @@ const DashboardLayout = () => {
           </div>
           <button
             onClick={handleLogout}
-            className="w-full flex items-center justify-center gap-2 px-3 py-2 text-xs font-semibold text-rose-300 hover:text-rose-200 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 rounded-lg transition-all cursor-pointer"
+            className="w-full flex items-center justify-center gap-2 px-3 py-2 text-xs font-semibold text-red-700 hover:text-red-800 bg-red-50 hover:bg-red-100 border border-red-200 rounded-xl transition cursor-pointer"
           >
             <LogOut className="w-3.5 h-3.5" />
             Sign Out
@@ -180,18 +165,19 @@ const DashboardLayout = () => {
       </aside>
 
       {/* Mobile Top Header */}
-      <div className="md:hidden bg-[#0a1329] text-white p-4 flex items-center justify-between border-b border-white/[0.08] z-30">
-        <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center text-white">
-            <FlaskConical size={18} />
+      <div className="md:hidden bg-white text-[#172033] p-4 flex items-center justify-between border-b border-[#E5EBE6] sticky top-0 z-30 shadow-sm">
+        <Link to="/" className="flex items-center gap-2.5">
+          <div className="w-8 h-8 rounded-lg bg-[#EAF5ED] border border-[#BDE3CA] flex items-center justify-center text-[#087A35]">
+            <img src="/favicon.svg" alt="LabEquip" className="w-5 h-5" />
           </div>
-          <span className="font-bold text-sm tracking-tight">
-            Lab<span className="text-cyan-400">Track</span>
+          <span className="font-extrabold text-sm tracking-tight text-[#172033]">
+            Lab<span className="text-[#087A35]">Equip</span>
           </span>
-        </div>
+        </Link>
         <button
           onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-          className="p-1.5 rounded-lg border border-white/10 text-slate-300 hover:text-white"
+          className="p-2 rounded-xl border border-[#E5EBE6] text-[#647067] hover:text-[#172033] hover:bg-[#F7F9F7]"
+          aria-label="Toggle navigation menu"
         >
           {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
         </button>
@@ -199,13 +185,13 @@ const DashboardLayout = () => {
 
       {/* Mobile Drawer */}
       {mobileMenuOpen && (
-        <div className="md:hidden bg-[#0a1329]/95 border-b border-white/[0.08] px-4 py-4 space-y-2 z-30 backdrop-blur-xl">
+        <div className="md:hidden bg-white border-b border-[#E5EBE6] px-4 py-4 space-y-2 z-30 shadow-lg">
           <button
             onClick={() => {
               navigate(mainDashboardPath);
               setMobileMenuOpen(false);
             }}
-            className="w-full flex items-center gap-2 px-3.5 py-2.5 bg-cyan-500/15 text-cyan-300 font-bold text-xs rounded-xl border border-cyan-400/25 mb-2"
+            className="w-full flex items-center gap-2 px-3.5 py-2.5 bg-[#EAF5ED] text-[#087A35] font-bold text-xs rounded-xl border border-[#BDE3CA] mb-2"
           >
             <ArrowRightCircle className="w-4 h-4" />
             Go to Main Dashboard
@@ -217,7 +203,9 @@ const DashboardLayout = () => {
               onClick={() => setMobileMenuOpen(false)}
               className={({ isActive }) =>
                 `flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold ${
-                  isActive ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-white'
+                  isActive
+                    ? 'bg-[#EAF5ED] text-[#087A35] font-bold'
+                    : 'text-[#647067] hover:text-[#172033] hover:bg-[#F7F9F7]'
                 }`
               }
             >
@@ -225,18 +213,21 @@ const DashboardLayout = () => {
               {item.label}
             </NavLink>
           ))}
-          <button
-            onClick={handleLogout}
-            className="w-full flex items-center gap-2 px-3.5 py-2 text-xs font-semibold text-rose-400 hover:bg-rose-500/10 rounded-xl mt-3"
-          >
-            <LogOut className="w-4 h-4" />
-            Sign Out
-          </button>
+          <div className="pt-2 border-t border-[#E5EBE6]">
+            <p className="text-xs font-semibold text-[#172033] px-2 py-1">{user?.name} ({user?.role})</p>
+            <button
+              onClick={handleLogout}
+              className="w-full flex items-center gap-2 px-3.5 py-2 text-xs font-semibold text-red-700 bg-red-50 hover:bg-red-100 border border-red-200 rounded-xl mt-2 cursor-pointer"
+            >
+              <LogOut className="w-4 h-4" />
+              Sign Out
+            </button>
+          </div>
         </div>
       )}
 
       {/* Main Content Area */}
-      <main className="flex-1 flex flex-col min-w-0 overflow-y-auto z-10">
+      <main className="flex-1 flex flex-col min-w-0 overflow-y-auto">
         <Outlet />
       </main>
     </div>

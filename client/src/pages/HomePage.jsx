@@ -1,10 +1,13 @@
-import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import {
   Activity,
+  QrCode,
+  Wrench,
+  Calendar,
+  Users,
   ArrowRight,
-  BadgeCheck,
-  CalendarClock,
+  Play,
   CheckCircle2,
   ChevronDown,
   ClipboardCheck,
@@ -12,637 +15,422 @@ import {
   FlaskConical,
   Layers3,
   Menu,
-  QrCode,
   ScanLine,
   ShieldCheck,
-  Sparkles,
-  Wrench,
-  X,
   GraduationCap,
   HelpCircle,
   Zap,
-  Users,
   Tag,
   RefreshCw,
-} from "lucide-react";
-
-import "../styles/HomePage.css";
-
-/* ─── Static Data ─── */
-const features = [
-  {
-    num: "01",
-    icon: Layers3,
-    title: "Centralized Equipment Inventory",
-    description:
-      "Maintain organized records of laboratory instruments, serial numbers, locations, operational conditions, and equipment history.",
-    color: "hp-fi-blue",
-  },
-  {
-    num: "02",
-    icon: QrCode,
-    title: "Smart QR Identification",
-    description:
-      "Generate a unique QR code for every instrument. Scan it using Google Lens or a mobile camera to instantly open its equipment profile.",
-    color: "hp-fi-cyan",
-  },
-  {
-    num: "03",
-    icon: CalendarClock,
-    title: "Calibration Management",
-    description:
-      "Monitor last calibration dates, upcoming due dates, overdue equipment, and preserve every completed calibration record.",
-    color: "hp-fi-violet",
-  },
-  {
-    num: "04",
-    icon: ClipboardCheck,
-    title: "Digital Fault Tracking",
-    description:
-      "Allow students to report damaged instruments with photographs and help assistants manage the complete repair lifecycle.",
-    color: "hp-fi-emerald",
-  },
-];
-
-const workflow = [
-  {
-    number: "01",
-    icon: Wrench,
-    title: "Register Equipment",
-    description:
-      "The Lab Assistant adds equipment details directly into their assigned laboratory inventory.",
-  },
-  {
-    number: "02",
-    icon: QrCode,
-    title: "Generate & Scan QR",
-    description:
-      "A unique QR label is generated. Students scan it via camera or Google Lens to view instrument details.",
-  },
-  {
-    number: "03",
-    icon: FileClock,
-    title: "Report a Fault",
-    description:
-      "Students submit a fault description and damage photo. The system creates a traceable ticket and notifies staff.",
-  },
-  {
-    number: "04",
-    icon: CheckCircle2,
-    title: "Resolve & Maintain",
-    description:
-      "The Lab Assistant reviews the ticket, manages repairs, and updates the status with real-time email alerts to the student.",
-  },
-];
-
-const portals = [
-  {
-    title: "Administrator",
-    subtitle: "System Management",
-    description:
-      "Manage laboratories, archive and restore labs, create Lab Assistant accounts, and monitor global read-only reports.",
-    icon: ShieldCheck,
-    accent: "hp-portal-blue",
-    action: "Access Admin Portal",
-    to: "/login?role=Admin",
-    points: [
-      "Create, archive and restore laboratories",
-      "Direct Lab Assistant account creation",
-      "Automatic credentials dispatch via email",
-      "Calibrated and damaged equipment reports",
-    ],
-  },
-  {
-    title: "Lab Assistant",
-    subtitle: "Laboratory Operations",
-    description:
-      "Manage assigned laboratory equipment, generate QR labels, maintain calibration records, and resolve fault tickets.",
-    icon: Wrench,
-    accent: "hp-portal-green",
-    action: "Access Assistant Portal",
-    to: "/login?role=Assistant",
-    points: [
-      "Strict lab-isolated inventory control",
-      "Generate and print high-res QR codes",
-      "Optional calibration scheduling",
-      "Receive real-time fault email notifications",
-    ],
-  },
-  {
-    title: "Student",
-    subtitle: "Fault Reporting & Dashboard",
-    description:
-      "Scan equipment QR codes to report faults with photographs. Automatically receive login credentials and track all your tickets.",
-    icon: GraduationCap,
-    accent: "hp-portal-violet",
-    action: "Login as Student",
-    to: "/login?role=Student",
-    points: [
-      "Instant QR scan fault submission",
-      "Damage photo attachment",
-      "Personal Student Dashboard access",
-      "Automated email updates on ticket progress",
-    ],
-  },
-];
-
-const faqs = [
-  {
-    question: "How do I use this application to report a damaged lab instrument?",
-    answer:
-      "Simply point your smartphone camera or Google Lens at the physical QR code sticker on the laboratory instrument. The QR code opens the equipment's public view page. Click 'Report Fault / Damage', fill in your student details, describe the malfunction, attach a photograph, and submit. The assigned Lab Assistant is instantly alerted via automated email.",
-  },
-  {
-    question: "How does Student Login work?",
-    answer:
-      "When you submit your first fault report, the system automatically creates a Student account for you and emails your login credentials (your Student Roll Number and a secure temporary password). You can then click 'Login' on the top navigation, switch to 'Student Login', enter your Roll Number and password, and access your dedicated dashboard to track all your submitted tickets.",
-  },
-  {
-    question: "What functionality is available to Lab Assistants?",
-    answer:
-      "Lab Assistants have strict laboratory-isolated access. Once assigned to a lab (e.g., Chemistry Lab 1), they can register equipment (with optional calibration requirements), generate and print QR codes, maintain immutable calibration logs, and manage the fault ticket queue (transitioning status from Open to Under Review, In Repair, or Resolved).",
-  },
-  {
-    question: "How does ticket tracking work?",
-    answer:
-      "Students can log into their Student Dashboard to view the live status, submission dates, photos, and resolution notes for all their reported tickets. Whenever a Lab Assistant updates a ticket status, the system automatically dispatches an email notification to the student with the latest progress.",
-  },
-  {
-    question: "What do the different ticket statuses mean?",
-    answer:
-      "• Open: Ticket has been created and assigned to the lab's assistant.\n• Under Review: The assistant is inspecting the reported issue.\n• In Repair: The instrument is currently being serviced or repaired.\n• Resolved: The fault has been repaired, verified, and closed with notes.\n• Expired: The ticket has lapsed or was superseded by scheduled replacement.",
-  },
-  {
-    question: "How does the Forgot Password feature work?",
-    answer:
-      "If you forget your password (whether you are an Administrator, Lab Assistant, or Student), click 'Forgot Password?' on the Login page. Enter your registered email address to receive a secure 6-digit OTP code valid for 5 minutes. Enter the OTP to verify your identity, then create and confirm your new password.",
-  },
-];
+  X,
+  User,
+  Search,
+  ExternalLink,
+} from 'lucide-react';
+import heroLabImg from '../assets/hero-lab.jpg';
+import '../styles/LandingPage.css';
 
 /* ─── Component ─── */
 const HomePage = () => {
-  const [menuOpen, setMenuOpen] = useState(false);
-  const [openFaq, setOpenFaq] = useState(null);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [activeFaq, setActiveFaq] = useState(null);
+  const [demoModalOpen, setDemoModalOpen] = useState(false);
+  const [activeSection, setActiveSection] = useState('home');
 
-  const toggleFaq = (i) => setOpenFaq(openFaq === i ? null : i);
-  const closeMenu = () => setMenuOpen(false);
+  const navItems = [
+    { id: 'home', label: 'Home' },
+    { id: 'features', label: 'Features' },
+    { id: 'workflow', label: 'How It Works' },
+    { id: 'roles', label: 'Roles' },
+    { id: 'about', label: 'About' },
+  ];
+
+  useEffect(() => {
+    if (window.location.hash) {
+      const hashId = window.location.hash.replace('#', '');
+      if (['home', 'features', 'workflow', 'roles', 'about'].includes(hashId)) {
+        setActiveSection(hashId);
+      }
+    }
+    const handleScroll = () => {
+      const scrollY = window.scrollY;
+      const headerOffset = 140;
+      for (let i = navItems.length - 1; i >= 0; i--) {
+        const item = navItems[i];
+        const el = document.getElementById(item.id);
+        if (el) {
+          const top = el.offsetTop - headerOffset;
+          if (scrollY >= top) {
+            setActiveSection(item.id);
+            return;
+          }
+        }
+      }
+      setActiveSection('home');
+    };
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    window.addEventListener('hashchange', handleScroll, { passive: true });
+    handleScroll();
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      window.removeEventListener('hashchange', handleScroll);
+    };
+  }, []);
+
+  const toggleFaq = (index) => {
+    setActiveFaq(activeFaq === index ? null : index);
+  };
+  const closeMenu = () => setMobileMenuOpen(false);
+
+  const keyFeatures = [
+    { icon: QrCode, title: 'QR-Based Access', description: 'Scan QR to view equipment details instantly.' },
+    { icon: Wrench, title: 'Fault Tracking', description: 'Report issues with severity and photos.' },
+    { icon: Calendar, title: 'Calibration Management', description: 'Track calibration dates and maintenance history.' },
+    { icon: Users, title: 'Role-Based Access', description: 'Separate access for students, technicians and administrators.' },
+  ];
+
+  const workflowSteps = [
+    { number: '01', icon: QrCode, title: 'Scan QR', description: 'Students scan the instrument QR sticker via smartphone camera or Google Lens to open its public view page without logging in.' },
+    { number: '02', icon: Wrench, title: 'Report Fault', description: 'Students submit description and live damage photo. A traceable Ticket ID is generated and staff is alerted.' },
+    { number: '03', icon: FileClock, title: 'Assistant Reviews & Updates', description: 'The assigned Lab Assistant inspects the instrument, initiates repairs, logs calibration, and updates status.' },
+    { number: '04', icon: CheckCircle2, title: 'Track Status', description: 'Students follow repair progress with real-time status updates and resolution notes.' },
+  ];
+
+  const roles = [
+    {
+      title: 'Administrator',
+      subtitle: 'Institutional Oversight',
+      description: 'Manage campus laboratories, authorize lab assistant staff, monitor compliance ledgers, and view equipment damage trends.',
+      icon: ShieldCheck,
+      to: '/login?role=Admin',
+      btnLabel: 'Admin Portal',
+      features: [
+        'Create, archive and reactivate laboratories',
+        'Staff account creation with instant credentials',
+        'System compliance rate and damage ranking',
+        'Read-only audit and calibration ledgers',
+      ],
+    },
+    {
+      title: 'Lab Assistant',
+      subtitle: 'Laboratory Operations',
+      description: 'Strict lab-isolated console for managing equipment inventories, generating QR labels, tracking calibrations, and closing fault tickets.',
+      icon: Wrench,
+      to: '/login?role=Assistant',
+      btnLabel: 'Assistant Portal',
+      features: [
+        'Strict lab isolation for assigned facility',
+        'Generate, print and download QR code labels',
+        'Log completed calibrations with next-due alarms',
+        'Review reported damage photos and manage repairs',
+      ],
+    },
+    {
+      title: 'Student',
+      subtitle: 'Public & Authenticated Access',
+      description: 'Zero-friction fault reporting directly from equipment QR stickers, with personal portal access to track all reported tickets.',
+      icon: GraduationCap,
+      to: '/login?role=Student',
+      btnLabel: 'Student Login',
+      features: [
+        'Instant public QR scan without prior login',
+        'Capture damage photos via smartphone camera',
+        'Track repair status by Ticket ID and Roll Number',
+        'Dedicated student dashboard for ticket history',
+      ],
+    },
+  ];
+
+  const faqs = [
+    { question: 'How do I use this application to report a damaged lab instrument?', answer: "Simply point your smartphone camera or Google Lens at the physical QR code sticker on the laboratory instrument. The QR code opens the equipment's public view page. Click 'Report Fault / Damage', fill in your student details, describe the malfunction, attach a photograph, and submit. The assigned Lab Assistant is instantly alerted." },
+    { question: 'How does Student Login work?', answer: "When you submit your first fault report, the system creates a Student account for you and emails your login credentials (your Student Roll Number and a secure temporary password). You can then click 'Login', select 'Student Login', enter your Roll Number and password, and track all your submitted tickets." },
+    { question: 'What functionality is available to Lab Assistants?', answer: "Lab Assistants have strict laboratory-isolated access. Once assigned to a lab, they can register equipment, generate and print QR codes, maintain immutable calibration logs, and manage the fault ticket queue (transitioning status from Open to Under Review, In Repair, or Resolved)." },
+    { question: 'How does ticket tracking work without logging in?', answer: "You can visit the 'Track Ticket' page anytime from the navigation or home page. Enter your unique Ticket ID and Student Roll Number to view live repair progress, assigned technician updates, and completion notes." },
+    { question: 'What do the different ticket statuses mean?', answer: "• Open: Ticket has been created and assigned to the lab assistant.\n• Under Review: The assistant is inspecting the reported issue.\n• In Repair: The instrument is currently being serviced or repaired.\n• Resolved: The fault has been repaired, verified, and closed with notes." },
+    { question: 'How does the Forgot Password feature work?', answer: "If you forget your password, click 'Forgot Password?' on the Login page. Enter your registered email to receive a secure 6-digit OTP code valid for 5 minutes. Enter the OTP to verify your identity, then create and confirm a new password." },
+  ];
 
   return (
-    <div className="hp-root">
-
-      {/* ── Animated Background ── */}
-      <div className="hp-bg" aria-hidden="true">
-        <div className="hp-bg-grid" />
-        <div className="hp-orb-1" />
-        <div className="hp-orb-2" />
-        <div className="hp-orb-3" />
-      </div>
-
-      {/* ══════════════ HEADER ══════════════ */}
-      <header className="hp-header">
-        <div className="hp-header-inner">
-
-          {/* Logo */}
-          <Link to="/" style={{ display: "flex", alignItems: "center", gap: 12 }}>
-            <div className="hp-logo-mark">
-              <FlaskConical size={20} />
-            </div>
-            <div>
-              <div className="hp-logo-text-main">
-                Lab<span>Track</span>
-              </div>
-              <div className="hp-logo-text-sub">DIGITAL LAB MANAGEMENT</div>
-            </div>
+    <div className="min-h-screen bg-white text-[#172033] flex flex-col">
+      {/* Header */}
+      <header className="sticky top-0 z-40 bg-white border-b border-[#E5EBE6]">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
+          <Link to="/" className="flex items-center gap-3">
+            <img src="/labequip-logo.svg" alt="LabEquip" className="h-10 sm:h-11 w-auto object-contain" />
           </Link>
-
-          {/* Desktop Nav */}
-          <nav className="hp-nav">
-            <a className="hp-nav-link" href="#overview">Overview</a>
-            <a className="hp-nav-link" href="#features">Features</a>
-            <a className="hp-nav-link" href="#workflow">How It Works</a>
-            <a className="hp-nav-link" href="#portals">Portals</a>
-            <a className="hp-nav-link" href="#faqs">FAQ</a>
+          <nav className="hidden md:flex items-center gap-8 text-sm font-semibold">
+            {navItems.map(item => {
+              const isActive = activeSection === item.id;
+              return (
+                <a
+                  key={item.id}
+                  href={`#${item.id}`}
+                  onClick={() => setActiveSection(item.id)}
+                  className={`transition pb-1 ${isActive ? 'text-[#087A35] font-bold border-b-2 border-[#087A35]' : 'text-[#647067] hover:text-[#087A35]'}`}
+                >
+                  {item.label}
+                </a>
+              );
+            })}
           </nav>
-
-          {/* CTA + Hamburger */}
-          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-            <div className="hp-header-cta-wrap">
-              <Link to="/login" className="hp-header-cta">
-                Sign In <ArrowRight size={14} />
+          <div className="hidden sm:flex items-center gap-3">
+            <Link to="/track-ticket" className="text-xs font-semibold text-[#647067] hover:text-[#087A35] px-3 py-2 transition">Track Ticket</Link>
+            <Link to="/login" className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-[#087A35] hover:bg-[#075C2B] text-white text-xs font-bold transition shadow-sm cursor-pointer">
+              <User className="w-4 h-4" />
+              Login
+            </Link>
+          </div>
+          <button type="button" className="md:hidden p-2 rounded-xl text-[#647067] hover:text-[#172033] hover:bg-slate-100" onClick={() => setMobileMenuOpen(!mobileMenuOpen)} aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'} aria-expanded={mobileMenuOpen}>
+            {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+          </button>
+        </div>
+        {mobileMenuOpen && (
+          <div className="md:hidden bg-white border-b border-[#E5EBE6] px-5 py-4 space-y-2">
+            {navItems.map(item => {
+              const isActive = activeSection === item.id;
+              return (
+                <a key={item.id} href={`#${item.id}`} onClick={() => { setActiveSection(item.id); setMobileMenuOpen(false); }} className={`block text-sm px-3 py-2 rounded-xl transition ${isActive ? 'font-bold text-[#087A35] bg-[#EAF5ED]' : 'font-semibold text-[#647067] hover:text-[#087A35] hover:bg-[#F7F9F7]'}`}>{item.label}</a>
+              );
+            })}
+            <div className="pt-3 border-t border-[#E5EBE6] flex flex-col gap-2">
+              <Link to="/track-ticket" onClick={() => setMobileMenuOpen(false)} className="block text-xs font-semibold text-center text-[#647067] py-2 bg-slate-50 rounded-xl">Track Ticket Status</Link>
+              <Link to="/login" onClick={() => setMobileMenuOpen(false)} className="w-full flex items-center justify-center gap-2 px-5 py-2.5 rounded-full bg-[#087A35] text-white text-xs font-bold">
+                <User className="w-4 h-4" />
+                Login
               </Link>
             </div>
-            <button
-              className="hp-menu-btn"
-              onClick={() => setMenuOpen(!menuOpen)}
-              aria-label={menuOpen ? "Close menu" : "Open menu"}
-              aria-expanded={menuOpen}
-            >
-              {menuOpen ? <X size={20} /> : <Menu size={20} />}
-            </button>
           </div>
-        </div>
-
-        {/* Mobile Nav */}
-        {menuOpen && (
-          <nav className="hp-mobile-nav" id="mobile-navigation">
-            <a href="#overview" onClick={closeMenu}>Overview</a>
-            <a href="#features" onClick={closeMenu}>Features</a>
-            <a href="#workflow" onClick={closeMenu}>How It Works</a>
-            <a href="#portals" onClick={closeMenu}>Portals</a>
-            <a href="#faqs" onClick={closeMenu}>FAQ</a>
-            <Link to="/login" className="hp-mobile-cta" onClick={closeMenu}>
-              Sign In to Portal
-            </Link>
-          </nav>
         )}
       </header>
 
-      <main>
-
-        {/* ══════════════ HERO ══════════════ */}
-        <section id="overview" className="hp-section hp-hero">
-          <div className="hp-hero-grid">
-
-            {/* Left — Copy */}
-            <div className="hp-reveal">
-              <div className="hp-hero-eyebrow">
-                <span className="hp-hero-eyebrow-dot" />
-                Modern Laboratory Operations
-              </div>
-
-              <h1 className="hp-hero-h1">
-                Digital Lab Equipment<br />
-                <span className="hp-gradient-text">Fault &amp; Calibration</span><br />
-                Tracking
-              </h1>
-
-              <p className="hp-hero-desc">
-                A unified platform connecting Administrators, Lab Assistants,
-                and Students. Scan physical QR labels with any smartphone to
-                report faulty hardware, receive real-time email updates, and
-                maintain complete audit compliance.
-              </p>
-
-              <div className="hp-hero-actions">
-                <Link to="/login" className="hp-btn-primary">
-                  Sign In to Portal <ArrowRight size={16} />
-                </Link>
-                <a href="#workflow" className="hp-btn-ghost">
-                  <ScanLine size={16} /> Explore Workflow
-                </a>
-              </div>
-
-              <div className="hp-hero-highlights">
-                {[
-                  "Automated Email Alerts",
-                  "Student Ticket Dashboard",
-                  "QR-Based Identification",
-                  "Strict Lab Isolation",
-                ].map((item) => (
-                  <div key={item} className="hp-highlight-pill">
-                    <CheckCircle2 size={14} />
-                    {item}
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Right — Dashboard Visual */}
-            <div className="hp-reveal hp-reveal-d2 hp-hero-visual">
-              <div className="hp-hero-visual-glow" />
-
-              <div className="hp-dashboard-card">
-                {/* macOS-style topbar */}
-                <div className="hp-dc-topbar">
-                  <div className="hp-dc-dots">
-                    <span /><span /><span />
-                  </div>
-                  <div className="hp-dc-title">SYSTEM MONITORING</div>
-                  <div className="hp-dc-status">ALL SYSTEMS ACTIVE</div>
-                </div>
-
-                <div className="hp-dc-body">
-                  <div className="hp-dc-stats">
-                    {/* Stat 1 */}
-                    <div className="hp-stat-tile">
-                      <div className="hp-stat-icon">
-                        <Layers3 size={16} style={{ color: "#22d3ee" }} />
-                      </div>
-                      <div className="hp-stat-label">INVENTORY</div>
-                      <div className="hp-stat-value">Smart Labs</div>
-                      <div className="hp-stat-sub">Centralized tracking</div>
-                    </div>
-                    {/* Stat 2 */}
-                    <div className="hp-stat-tile">
-                      <div className="hp-stat-icon">
-                        <QrCode size={16} style={{ color: "#60a5fa" }} />
-                      </div>
-                      <div className="hp-stat-label">QR SCAN</div>
-                      <div className="hp-stat-value">Google Lens</div>
-                      <div className="hp-stat-sub">Instant profile view</div>
-                    </div>
-                    {/* Stat 3 */}
-                    <div className="hp-stat-tile">
-                      <div className="hp-stat-icon">
-                        <CalendarClock size={16} style={{ color: "#a78bfa" }} />
-                      </div>
-                      <div className="hp-stat-label">CALIBRATION</div>
-                      <div className="hp-stat-value">Automated</div>
-                      <div className="hp-stat-sub">Overdue alerts</div>
-                    </div>
-                    {/* Stat 4 */}
-                    <div className="hp-stat-tile">
-                      <div className="hp-stat-icon">
-                        <ClipboardCheck size={16} style={{ color: "#34d399" }} />
-                      </div>
-                      <div className="hp-stat-label">MAINTENANCE</div>
-                      <div className="hp-stat-value">Fault Tickets</div>
-                      <div className="hp-stat-sub">Real-time updates</div>
-                    </div>
-                  </div>
-
-                  {/* Status strip */}
-                  <div className="hp-dc-strip">
-                    <div className="hp-dc-strip-left">
-                      <Activity size={13} />
-                      Automated Nodemailer Gmail Integration
-                    </div>
-                    <div className="hp-dc-strip-badge">ACTIVE</div>
-                  </div>
+      {/* Main */}
+      <main className="flex-1">
+        {/* Hero Section */}
+        <section id="home" className="relative overflow-hidden bg-white border-b border-[#E5EBE6]">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="grid grid-cols-1 lg:grid-cols-12 items-center min-h-[460px] lg:min-h-[500px] py-10 lg:py-0">
+              <div className="lg:col-span-6 lg:pr-8 space-y-6 z-10">
+                <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-[#172033] tracking-tight leading-[1.15]">
+                  Simplify Lab Equipment <br />
+                  <span className="text-[#087A35]">Management</span>
+                </h1>
+                <p className="text-sm sm:text-base text-[#647067] max-w-lg leading-relaxed">
+                  Track equipment, report faults, manage repairs and maintain calibration records — all in one place.
+                </p>
+                <div className="flex flex-wrap items-center gap-4 pt-2">
+                  <Link to="/login" className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-[#087A35] hover:bg-[#075C2B] text-white text-sm font-bold transition shadow-sm">
+                    Get Started
+                    <ArrowRight className="w-4 h-4" />
+                  </Link>
+                  <button type="button" onClick={() => setDemoModalOpen(true)} className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-white hover:bg-[#F7F9F7] text-[#087A35] border border-[#CBD8CE] text-sm font-bold transition cursor-pointer">
+                    <Play className="w-3.5 h-3.5 fill-[#087A35]" />
+                    Watch Demo
+                  </button>
                 </div>
               </div>
-
-              {/* Floating Chip */}
-              <div className="hp-float-chip">
-                <div className="hp-float-chip-icon">
-                  <CheckCircle2 size={16} />
-                </div>
-                <div>
-                  Ticket Resolved
-                  <small>Lab Assistant notified</small>
+              <div className="lg:col-span-6 relative mt-8 lg:mt-0 flex justify-center lg:justify-end">
+                <div className="relative w-full max-w-lg lg:max-w-none rounded-3xl overflow-hidden shadow-lg border border-[#E5EBE6]">
+                  <svg className="hidden lg:block absolute left-0 top-0 bottom-0 h-full w-24 text-white pointer-events-none z-10" viewBox="0 0 100 500" preserveAspectRatio="none" fill="currentColor"><path d="M0,0 L0,500 C40,400 80,300 30,150 C10,90 0,30 0,0 Z" /></svg>
+                  <div className="hidden lg:block absolute -left-12 top-0 bottom-0 w-24 bg-[#EAF5ED]/70 rounded-r-full blur-sm pointer-events-none z-0" />
+                  <img src={heroLabImg} alt="Laboratory Equipment: Digital Oscilloscope, Multimeter and QR code stand" className="w-full h-[320px] sm:h-[400px] object-cover object-center" />
                 </div>
               </div>
             </div>
           </div>
         </section>
 
-        {/* ══════════════ STATS BAR ══════════════ */}
-        <div className="hp-stats-bar">
-          <div className="hp-stats-bar-inner">
-            <div className="hp-stat-block">
-              <div className="hp-stat-block-num">3<span>+</span></div>
-              <div className="hp-stat-block-label">Active Laboratories</div>
+        {/* Features Section */}
+        <section id="features" className="py-12 sm:py-16 bg-[#F7F9F7] border-b border-[#E5EBE6]">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex items-center gap-3 mb-8">
+              <span className="w-8 h-1.5 rounded-full bg-[#087A35]" />
+              <h2 className="text-xl sm:text-2xl font-extrabold text-[#172033] tracking-tight">Key Features</h2>
             </div>
-            <div className="hp-stat-block">
-              <div className="hp-stat-block-num">100<span>%</span></div>
-              <div className="hp-stat-block-label">Digital Fault Tickets</div>
-            </div>
-            <div className="hp-stat-block">
-              <div className="hp-stat-block-num">QR<span>+</span></div>
-              <div className="hp-stat-block-label">Smart QR Labels</div>
-            </div>
-            <div className="hp-stat-block">
-              <div className="hp-stat-block-num">3<span>×</span></div>
-              <div className="hp-stat-block-label">Role-Based Portals</div>
-            </div>
-          </div>
-        </div>
-
-        {/* ══════════════ FEATURES ══════════════ */}
-        <section id="features" className="hp-section hp-features">
-          <div className="hp-section-header">
-            <div className="hp-label">
-              <Zap size={12} /> Core Capabilities
-            </div>
-            <h2>Built for Modern Technical Labs</h2>
-            <p>
-              Streamline laboratory inventory control, calibration audits, and
-              fault troubleshooting with integrated role-based security.
-            </p>
-          </div>
-
-          <div className="hp-features-grid">
-            {features.map((f, i) => {
-              const Icon = f.icon;
-              return (
-                <div
-                  key={f.title}
-                  className={`hp-feature-card hp-reveal hp-reveal-d${i + 1}`}
-                >
-                  <div className="hp-feature-num">{f.num}</div>
-                  <div className={`hp-feature-icon-wrap ${f.color}`}>
-                    <Icon size={22} />
-                  </div>
-                  <h3>{f.title}</h3>
-                  <p>{f.description}</p>
-                </div>
-              );
-            })}
-          </div>
-        </section>
-
-        {/* ══════════════ WORKFLOW ══════════════ */}
-        <section id="workflow" className="hp-section hp-workflow">
-          <div className="hp-section-header">
-            <div className="hp-label">
-              <RefreshCw size={12} /> Step-by-Step Architecture
-            </div>
-            <h2>How the System Operates</h2>
-            <p>
-              A transparent fault tracking and calibration lifecycle from
-              hardware registration to student issue reporting and final
-              resolution.
-            </p>
-          </div>
-
-          <div className="hp-workflow-wrap">
-            {workflow.map((step) => {
-              const Icon = step.icon;
-              return (
-                <div key={step.number} className="hp-workflow-step">
-                  <div className="hp-step-num">{step.number}</div>
-                  <div className="hp-step-icon">
-                    <Icon size={20} />
-                  </div>
-                  <div className="hp-step-label">STEP {step.number}</div>
-                  <h3>{step.title}</h3>
-                  <p>{step.description}</p>
-                </div>
-              );
-            })}
-          </div>
-        </section>
-
-        {/* ══════════════ PORTALS ══════════════ */}
-        <section id="portals" className="hp-section hp-portals">
-          <div className="hp-section-header">
-            <div className="hp-label">
-              <Users size={12} /> Role-Based Access
-            </div>
-            <h2>Tailored Portals for Every User</h2>
-            <p>
-              Dedicated interfaces ensure that Administrators, Lab Assistants,
-              and Students have the exact tools and security boundaries they
-              need.
-            </p>
-          </div>
-
-          <div className="hp-portals-grid">
-            {portals.map((portal) => {
-              const Icon = portal.icon;
-              return (
-                <div key={portal.title} className={`hp-portal-card ${portal.accent}`}>
-                  <div className="hp-portal-body">
-                    <div className="hp-portal-icon-wrap">
-                      <Icon size={24} />
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+              {keyFeatures.map((feat, i) => (
+                <div key={i} className="feature-card bg-white rounded-2xl p-6 border border-[#E5EBE6] shadow-sm flex flex-col justify-between">
+                  <div>
+                    <div className="w-12 h-12 rounded-xl bg-[#EAF5ED] text-[#087A35] border border-[#BDE3CA] flex items-center justify-center mb-4">
+                      <feat.icon className="w-6 h-6" />
                     </div>
-                    <div className="hp-portal-subtitle">{portal.subtitle}</div>
-                    <h3>{portal.title}</h3>
-                    <p>{portal.description}</p>
+                    <h3 className="text-base font-bold text-[#172033] mb-1.5">{feat.title}</h3>
+                    <p className="text-xs sm:text-sm text-[#647067] leading-relaxed">{feat.description}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
 
-                    <div className="hp-portal-checklist">
-                      {portal.points.map((pt) => (
-                        <div key={pt} className="hp-portal-check-item">
-                          <CheckCircle2 size={13} />
-                          <span>{pt}</span>
-                        </div>
+        {/* Workflow Section */}
+        <section id="workflow" className="py-16 sm:py-20 bg-white border-b border-[#E5EBE6]">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="text-center max-w-2xl mx-auto mb-12">
+              <span className="text-xs font-bold text-[#087A35] uppercase tracking-wider bg-[#EAF5ED] px-3.5 py-1 rounded-full border border-[#BDE3CA] inline-block mb-3">End-to-End Workflow</span>
+              <h2 className="text-2xl sm:text-3xl font-extrabold text-[#172033] tracking-tight">How LabEquip Works</h2>
+              <p className="text-sm text-[#647067] mt-2">From physical QR scan to ticket resolution — a seamless cycle keeping university laboratories compliant and functional.</p>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              {workflowSteps.map((step, idx) => (
+                <div key={idx} className="p-6 rounded-2xl bg-[#F7F9F7] border border-[#E5EBE6] relative flex flex-col justify-between">
+                  <div>
+                    <div className="flex items-center justify-between mb-4">
+                      <span className="text-2xl font-black text-[#087A35]/30 font-mono">{step.number}</span>
+                      <div className="w-10 h-10 rounded-xl bg-white border border-[#E5EBE6] text-[#087A35] flex items-center justify-center shadow-sm">
+                        <step.icon className="w-5 h-5" />
+                      </div>
+                    </div>
+                    <h3 className="text-base font-bold text-[#172033] mb-1.5">{step.title}</h3>
+                    <p className="text-xs text-[#647067] leading-relaxed">{step.description}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* Roles Section */}
+        <section id="roles" className="py-16 sm:py-20 bg-[#F7F9F7] border-b border-[#E5EBE6]">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="text-center max-w-2xl mx-auto mb-12">
+              <span className="text-xs font-bold text-[#087A35] uppercase tracking-wider bg-[#EAF5ED] px-3.5 py-1 rounded-full border border-[#BDE3CA] inline-block mb-3">Role-Based Portals</span>
+              <h2 className="text-2xl sm:text-3xl font-extrabold text-[#172033] tracking-tight">Access for Every Role</h2>
+              <p className="text-sm text-[#647067] mt-2">Tailored workspaces ensure strict isolation, data integrity, and operational focus for all campus users.</p>
+            </div>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              {roles.map((r, i) => (
+                <div key={i} className="bg-white rounded-3xl p-7 border border-[#E5EBE6] shadow-sm flex flex-col justify-between hover:border-[#BDE3CA] transition">
+                  <div>
+                    <div className="w-12 h-12 rounded-2xl bg-[#EAF5ED] text-[#087A35] border border-[#BDE3CA] flex items-center justify-center mb-5">
+                      <r.icon className="w-6 h-6" />
+                    </div>
+                    <span className="text-[11px] font-bold text-[#087A35] uppercase tracking-wider">{r.subtitle}</span>
+                    <h3 className="text-xl font-extrabold text-[#172033] mt-0.5 mb-2.5">{r.title}</h3>
+                    <p className="text-xs sm:text-sm text-[#647067] leading-relaxed mb-6">{r.description}</p>
+                    <ul className="space-y-2.5 border-t border-[#E5EBE6] pt-5 mb-6 text-xs text-[#172033]">
+                      {r.features.map((item, idx) => (
+                        <li key={idx} className="flex items-start gap-2.5">
+                          <CheckCircle2 className="w-4 h-4 text-[#087A35] shrink-0 mt-0.5" />
+                          <span>{item}</span>
+                        </li>
                       ))}
-                    </div>
+                    </ul>
                   </div>
-
-                  <div className="hp-portal-footer">
-                    <Link to={portal.to} className="hp-portal-btn">
-                      {portal.action} <ArrowRight size={14} />
-                    </Link>
-                  </div>
+                  <Link to={r.to} className="w-full inline-flex items-center justify-center gap-2 py-3 rounded-xl bg-[#EAF5ED] hover:bg-[#DDF2E3] text-[#087A35] font-bold text-xs border border-[#BDE3CA] transition">
+                    {r.btnLabel}
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </Link>
                 </div>
-              );
-            })}
+              ))}
+            </div>
           </div>
         </section>
 
-        {/* ══════════════ FAQ ══════════════ */}
-        <section id="faqs" className="hp-section hp-faq" style={{ margin: "0 auto" }}>
-          <div className="hp-section-header">
-            <div className="hp-label">
-              <HelpCircle size={12} /> Frequently Asked Questions
-            </div>
-            <h2>Questions &amp; Answers</h2>
-            <p>
-              Everything you need to know about navigating the system, reporting
-              faults, tracking ticket status, and password management.
-            </p>
-          </div>
-
-          <div className="hp-faq-list">
-            {faqs.map((faq, index) => (
-              <div
-                key={faq.question}
-                className={`hp-faq-item${openFaq === index ? " open" : ""}`}
-              >
-                <button
-                  type="button"
-                  className="hp-faq-btn"
-                  onClick={() => toggleFaq(index)}
-                >
-                  <span>{faq.question}</span>
-                  <ChevronDown size={18} className="hp-faq-chevron" />
-                </button>
-                {openFaq === index && (
-                  <div className="hp-faq-answer">{faq.answer}</div>
-                )}
+        {/* About Section */}
+        <section id="about" className="py-16 sm:py-20 bg-white border-b border-[#E5EBE6]">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="max-w-3xl mx-auto text-center space-y-5">
+              <span className="text-xs font-bold text-[#087A35] uppercase tracking-wider bg-[#EAF5ED] px-3.5 py-1 rounded-full border border-[#BDE3CA] inline-block">About the Project</span>
+              <h2 className="text-2xl sm:text-3xl font-extrabold text-[#172033] tracking-tight">Centralized University Laboratory Management</h2>
+              <p className="text-sm sm:text-base text-[#647067] leading-relaxed">
+                LabEquip provides a unified platform to maintain institutional accountability across engineering, science, and computer laboratories. By combining automated QR label generation, transparent fault reporting, and proactive calibration scheduling, LabEquip minimizes experiment downtime and maximizes laboratory safety.
+              </p>
+              <div className="pt-4 flex flex-wrap justify-center gap-3">
+                <Link to="/track-ticket" className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white hover:bg-slate-50 text-[#172033] border border-[#CBD5E1] text-xs font-bold transition">
+                  <Search className="w-4 h-4 text-[#087A35]" />
+                  Track an Existing Ticket
+                </Link>
+                <Link to="/login" className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-[#087A35] hover:bg-[#075C2B] text-white text-xs font-bold transition">
+                  Sign In to Console
+                  <ArrowRight className="w-4 h-4" />
+                </Link>
               </div>
-            ))}
-          </div>
-        </section>
-
-        {/* ══════════════ FINAL CTA ══════════════ */}
-        <section className="hp-section hp-cta-section">
-          <div className="hp-cta-box">
-            <div className="hp-cta-icon">
-              <Activity size={28} />
-            </div>
-            <h2>
-              Better Visibility.{" "}
-              <span className="hp-gradient-text">Better Maintenance.</span>
-            </h2>
-            <p>
-              Sign in to manage laboratory inventory, maintain equipment
-              calibrations, or review your student fault tickets.
-            </p>
-            <div className="hp-cta-actions">
-              <Link to="/login" className="hp-btn-primary">
-                Sign In to System <ArrowRight size={16} />
-              </Link>
-              <a href="#overview" className="hp-btn-ghost">
-                Learn More
-              </a>
             </div>
           </div>
         </section>
 
+        {/* FAQs Section */}
+        <section id="faqs" className="py-16 sm:py-20 bg-[#F7F9F7] border-b border-[#E5EBE6]">
+          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="text-center mb-12">
+              <span className="text-xs font-bold text-[#087A35] uppercase tracking-wider bg-[#EAF5ED] px-3.5 py-1 rounded-full border border-[#BDE3CA] inline-block mb-3">Got Questions?</span>
+              <h2 className="text-2xl sm:text-3xl font-extrabold text-[#172033] tracking-tight">Frequently Asked Questions</h2>
+            </div>
+            <div className="space-y-3.5">
+              {faqs.map((faq, idx) => (
+                <div key={idx} className="rounded-2xl bg-white border border-[#E5EBE6] overflow-hidden transition">
+                  <button type="button" onClick={() => toggleFaq(idx)} className="w-full text-left p-5 flex items-center justify-between gap-4 font-bold text-sm sm:text-base text-[#172033] hover:text-[#087A35] transition cursor-pointer">
+                    <span>{faq.question}</span>
+                    <ChevronDown className={`w-5 h-5 text-[#647067] shrink-0 transition-transform ${activeFaq === idx ? 'rotate-180 text-[#087A35]' : ''}`} />
+                  </button>
+                  {activeFaq === idx && (
+                    <div className="px-5 pb-5 text-xs sm:text-sm text-[#647067] leading-relaxed border-t border-[#E5EBE6] pt-4 whitespace-pre-line bg-[#F7F9F7]/50">
+                      {faq.answer}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* Watch Demo Modal */}
+        {demoModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
+            <div className="bg-white border border-[#E5EBE6] rounded-3xl max-w-lg w-full p-6 sm:p-7 shadow-2xl relative">
+              <button onClick={() => setDemoModalOpen(false)} className="absolute top-5 right-5 text-slate-400 hover:text-[#172033]">
+                <X className="w-5 h-5" />
+              </button>
+              <div className="w-12 h-12 rounded-2xl bg-[#EAF5ED] text-[#087A35] flex items-center justify-center mb-4">
+                <Play className="w-6 h-6 fill-[#087A35]" />
+              </div>
+              <h3 className="text-lg font-bold text-[#172033]">LabEquip System Demonstration</h3>
+              <p className="text-xs text-[#647067] mt-1 mb-5 leading-relaxed">
+                Experience the fast 3-step fault reporting cycle: scan the instrument QR, snap the damage photograph, and receive automated email updates as the lab assistant inspects and repairs the hardware.
+              </p>
+              <div className="p-4 bg-[#F7F9F7] rounded-2xl border border-[#E5EBE6] space-y-2 text-xs">
+                <div className="flex items-center gap-2 font-bold text-[#172033]">
+                  <QrCode className="w-4 h-4 text-[#087A35]" />
+                  Try scanning any equipment label on campus!
+                </div>
+                <p className="text-[#647067]">Alternatively, test the ticket lookup tool using your Ticket ID and Roll Number.</p>
+              </div>
+              <div className="mt-5 flex items-center justify-end gap-3">
+                <Link to="/track-ticket" onClick={() => setDemoModalOpen(false)} className="px-4 py-2 text-xs font-bold text-[#087A35] hover:bg-[#EAF5ED] rounded-xl transition">
+                  Track a Ticket
+                </Link>
+                <button type="button" onClick={() => setDemoModalOpen(false)} className="px-5 py-2 text-xs font-bold bg-[#087A35] hover-bg-[#075C2B] text-white rounded-xl transition">
+                  Got It
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </main>
 
-      {/* ══════════════ FOOTER ══════════════ */}
-      <footer className="hp-footer">
-        <div className="hp-footer-inner">
-          <div className="hp-footer-grid">
-
-            {/* Brand */}
-            <div className="hp-footer-about">
-              <Link to="/" style={{ display: "inline-flex", alignItems: "center", gap: 12 }}>
-                <div className="hp-logo-mark">
-                  <FlaskConical size={18} />
-                </div>
-                <div>
-                  <div className="hp-logo-text-main">Lab<span>Track</span></div>
-                  <div className="hp-logo-text-sub">LABORATORY MANAGEMENT</div>
-                </div>
-              </Link>
-              <p>
-                A centralized platform for laboratory equipment identification,
-                calibration visibility, and digital fault management with
-                automated email notifications.
-              </p>
-            </div>
-
-            {/* Quick Links */}
-            <div className="hp-footer-col">
-              <h4>Quick Links</h4>
-              <a href="#overview">Overview</a>
-              <a href="#features">Features</a>
-              <a href="#workflow">Workflow</a>
-              <a href="#portals">Portals</a>
-              <a href="#faqs">FAQ</a>
-            </div>
-
-            {/* Access Portals */}
-            <div className="hp-footer-col">
-              <h4>Access Portals</h4>
-              <Link to="/login?role=Admin">Administrator</Link>
-              <Link to="/login?role=Assistant">Lab Assistant</Link>
-              <Link to="/login?role=Student">Student Portal</Link>
-            </div>
-
-            {/* Project Details */}
-            <div className="hp-footer-col">
-              <h4>Project Details</h4>
-              <p><GraduationCap size={14} style={{ display: "inline", marginRight: 6, color: "#22d3ee" }} />B.Tech Major Project</p>
-              <p><FlaskConical size={14} style={{ display: "inline", marginRight: 6, color: "#22d3ee" }} />GLA University</p>
-              <p><BadgeCheck size={14} style={{ display: "inline", marginRight: 6, color: "#22d3ee" }} />Group G137</p>
+      {/* Footer */}
+      <footer className="bg-white border-t border-[#E5EBE6] py-12">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-6 pb-8 border-b border-[#E5EBE6]">
+            <Link to="/" className="flex items-center gap-3">
+              <img src="/labequip-logo.svg" alt="LabEquip" className="h-9 w-auto object-contain" />
+            </Link>
+            <div className="flex flex-wrap items-center gap-6 text-xs font-semibold text-[#647067]">
+              <a href="#home" className="hover:text-[#087A35]">Home</a>
+              <a href="#features" className="hover:text-[#087A35]">Features</a>
+              <a href="#workflow" className="hover:text-[#087A35]">How It Works</a>
+              <a href="#roles" className="hover:text-[#087A35]">Roles</a>
+              <a href="#about" className="hover:text-[#087A35]">About</a>
+              <Link to="/track-ticket" className="text-[#087A35] hover:underline">Track Ticket</Link>
+              <Link to="/login" className="hover:text-[#087A35]">Staff & Student Login</Link>
             </div>
           </div>
-
-          <div className="hp-footer-bottom">
-            <span>© {new Date().getFullYear()} Digital Lab Equipment Fault Tracking System.</span>
-            <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
-              Designed for smarter laboratory operations
-              <Sparkles size={12} style={{ color: "#22d3ee" }} />
-            </span>
+          <div className="pt-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-[#647067]">
+            <p>© {new Date().getFullYear()} LabEquip — Local Lab Equipment Calibration & Fault Tracking System.</p>
+            <p>Designed for university laboratory compliance and equipment lifecycle management.</p>
           </div>
         </div>
       </footer>
-
     </div>
   );
 };

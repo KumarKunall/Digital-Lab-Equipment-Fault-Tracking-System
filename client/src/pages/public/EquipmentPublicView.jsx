@@ -2,8 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import api from '../../services/api';
 import {
-  Cpu,
-  AlertTriangle,
   Building2,
   Calendar,
   AlertCircle,
@@ -11,9 +9,10 @@ import {
   Wrench,
   ArrowRight,
   ShieldCheck,
-  Sparkles,
   QrCode,
-  Printer
+  Printer,
+  AlertTriangle,
+  ArrowLeft
 } from 'lucide-react';
 import { OperationalStatusBadge, CalibrationStatusBadge } from '../../utils/statusBadges';
 
@@ -39,10 +38,10 @@ const EquipmentPublicView = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#080F20] flex items-center justify-center p-4 text-white">
-        <div className="text-center">
-          <div className="w-10 h-10 border-4 border-cyan-400 border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
-          <p className="text-xs font-semibold text-slate-400 font-mono">Retrieving equipment records...</p>
+      <div className="min-h-screen bg-[#F7F9F7] flex items-center justify-center p-4">
+        <div className="p-8 bg-white border border-[#E5EBE6] rounded-3xl shadow-sm text-center flex flex-col items-center gap-3">
+          <div className="w-10 h-10 border-3 border-[#087A35] border-t-transparent rounded-full animate-spin" />
+          <p className="text-xs font-semibold text-[#647067]">Retrieving equipment profile...</p>
         </div>
       </div>
     );
@@ -50,16 +49,16 @@ const EquipmentPublicView = () => {
 
   if (error || !equipment) {
     return (
-      <div className="min-h-screen bg-[#080F20] flex items-center justify-center p-4">
-        <div className="bg-[#0f1d38] border border-white/15 rounded-3xl max-w-md w-full p-7 text-center shadow-2xl text-white">
-          <div className="w-12 h-12 bg-rose-500/15 text-rose-400 border border-rose-500/30 rounded-2xl flex items-center justify-center mx-auto mb-3.5">
+      <div className="min-h-screen bg-[#F7F9F7] flex items-center justify-center p-4">
+        <div className="bg-white border border-[#E5EBE6] rounded-3xl max-w-md w-full p-8 text-center shadow-sm">
+          <div className="w-12 h-12 bg-red-50 text-red-600 border border-red-200 rounded-2xl flex items-center justify-center mx-auto mb-3.5">
             <AlertCircle className="w-6 h-6" />
           </div>
-          <h2 className="text-lg font-bold text-white">Equipment Record Not Found</h2>
-          <p className="text-xs text-slate-400 mt-1 mb-6 leading-relaxed">{error}</p>
+          <h2 className="text-lg font-bold text-[#172033]">Equipment Record Not Found</h2>
+          <p className="text-xs text-[#647067] mt-1 mb-6 leading-relaxed">{error}</p>
           <Link
             to="/"
-            className="inline-block px-5 py-2.5 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 text-white rounded-xl text-xs font-bold transition shadow-lg shadow-cyan-500/20"
+            className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#087A35] hover:bg-[#075C2B] text-white rounded-xl text-xs font-bold transition shadow-sm"
           >
             Go to Home
           </Link>
@@ -71,84 +70,101 @@ const EquipmentPublicView = () => {
   const isReady = equipment.operationalStatus === 'Ready to Use';
 
   return (
-    <div className="min-h-screen bg-[#080F20] text-white py-10 px-4 flex flex-col justify-between relative selection:bg-cyan-500/30 selection:text-cyan-200">
+    <div className="min-h-screen bg-[#F7F9F7] text-[#172033] py-8 px-4 flex flex-col justify-between">
       
-      {/* Background glow */}
-      <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
-        <div className="absolute top-10 right-1/4 w-[350px] h-[350px] bg-cyan-600/10 rounded-full blur-[100px]" />
-      </div>
-
-      <div className="max-w-md mx-auto w-full relative z-10">
-        {/* Header Branding */}
-        <div className="text-center mb-6">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-400/20 text-cyan-300 text-xs font-bold tracking-wider uppercase mb-2">
-            <ShieldCheck className="w-3.5 h-3.5 text-cyan-400" />
-            Verified University Laboratory Instrument
-          </div>
-          <h1 className="text-2xl font-extrabold text-white tracking-tight">
-            Equipment Health Profile
-          </h1>
+      <div className="max-w-md mx-auto w-full">
+        
+        {/* Top Header with Return & Brand */}
+        <div className="flex items-center justify-between mb-4">
+          <Link
+            to="/"
+            className="inline-flex items-center gap-1.5 text-xs font-bold text-[#647067] hover:text-[#087A35] transition"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            Home
+          </Link>
+          <img src="/labequip-logo.svg" alt="LabEquip" className="h-7 w-auto object-contain" />
         </div>
 
-        {/* Equipment Card */}
-        <div className="bg-[#0f1d38]/90 border border-white/15 rounded-3xl p-6 sm:p-7 shadow-2xl backdrop-blur-xl space-y-6">
+        {/* Verification Pill */}
+        <div className="text-center mb-4">
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#EAF5ED] border border-[#BDE3CA] text-[#087A35] text-[11px] font-bold tracking-wider uppercase">
+            <ShieldCheck className="w-3.5 h-3.5" />
+            Verified University Laboratory Instrument
+          </div>
+        </div>
+
+        {/* Equipment Main Profile Card */}
+        <div className="bg-white border border-[#E5EBE6] rounded-3xl p-6 sm:p-7 shadow-sm space-y-5">
           
           {/* Status Alert Banner */}
           {isReady ? (
-            <div className="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-200 flex items-start gap-3">
-              <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0 mt-0.5" />
+            <div className="p-4 rounded-2xl bg-[#EAF5ED] border border-[#BDE3CA] text-[#087A35] flex items-start gap-3">
+              <CheckCircle2 className="w-5 h-5 text-[#087A35] shrink-0 mt-0.5" />
               <div>
-                <p className="text-xs font-bold text-emerald-300">Instrument is Ready to Use</p>
-                <p className="text-[11px] text-emerald-200/80 mt-0.5 leading-relaxed">
+                <p className="text-xs font-bold">Instrument is Ready to Use</p>
+                <p className="text-[11px] text-[#087A35]/80 mt-0.5 leading-relaxed">
                   Verified operational for student experiments. Report any unexpected faults immediately.
                 </p>
               </div>
             </div>
           ) : (
-            <div className="p-4 rounded-2xl bg-rose-500/15 border border-rose-500/30 text-rose-200 flex items-start gap-3">
-              <AlertTriangle className="w-5 h-5 text-rose-400 shrink-0 mt-0.5" />
+            <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 text-amber-800 flex items-start gap-3">
+              <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
               <div>
-                <p className="text-xs font-bold text-rose-300">Do Not Power On / Under Inspection</p>
-                <p className="text-[11px] text-rose-200/80 mt-0.5 leading-relaxed">
+                <p className="text-xs font-bold">Do Not Power On / Under Inspection</p>
+                <p className="text-[11px] text-amber-700 mt-0.5 leading-relaxed">
                   This instrument has been flagged for repair or damage inspection.
                 </p>
               </div>
             </div>
           )}
 
-          {/* Instrument Title & Info */}
+          {/* Instrument Title & Serial */}
           <div>
-            <span className="font-mono text-xs text-cyan-400 block uppercase tracking-wider font-semibold">
+            <span className="font-mono text-xs text-[#087A35] block uppercase tracking-wider font-bold">
               SN: {equipment.serialNumber} {equipment.model ? `• ${equipment.model}` : ''}
             </span>
-            <h2 className="text-2xl font-bold text-white mt-1">{equipment.name}</h2>
+            <h1 className="text-2xl font-extrabold text-[#172033] mt-1 tracking-tight">
+              {equipment.name}
+            </h1>
           </div>
 
           {/* Key Details Grid */}
-          <div className="grid grid-cols-2 gap-4 text-xs border-t border-b border-white/10 py-5">
+          <div className="grid grid-cols-2 gap-4 text-xs border-t border-b border-[#E5EBE6] py-5">
             <div>
-              <span className="text-slate-400 block text-[11px] font-bold uppercase tracking-wider">Laboratory</span>
-              <p className="font-bold text-white mt-1 flex items-center gap-1.5">
-                <Building2 className="w-3.5 h-3.5 text-cyan-400" />
+              <span className="text-[#647067] block text-[11px] font-bold uppercase tracking-wider">
+                Laboratory
+              </span>
+              <p className="font-bold text-[#172033] mt-1 flex items-center gap-1.5">
+                <Building2 className="w-3.5 h-3.5 text-[#087A35]" />
                 {equipment.labName}
               </p>
-              <span className="text-[10px] text-slate-400 font-mono">{equipment.labBlock} ({equipment.labId})</span>
+              <span className="text-[10px] text-[#647067] font-mono">
+                {equipment.labBlock} ({equipment.labId})
+              </span>
             </div>
 
             <div>
-              <span className="text-slate-400 block text-[11px] font-bold uppercase tracking-wider">Bench Location</span>
-              <p className="font-bold text-white mt-1">{equipment.location}</p>
+              <span className="text-[#647067] block text-[11px] font-bold uppercase tracking-wider">
+                Bench Location
+              </span>
+              <p className="font-bold text-[#172033] mt-1">{equipment.location}</p>
             </div>
 
             <div>
-              <span className="text-slate-400 block text-[11px] font-bold uppercase tracking-wider">Operational Status</span>
+              <span className="text-[#647067] block text-[11px] font-bold uppercase tracking-wider">
+                Operational Status
+              </span>
               <div className="mt-1.5">
                 <OperationalStatusBadge status={equipment.operationalStatus} />
               </div>
             </div>
 
             <div>
-              <span className="text-slate-400 block text-[11px] font-bold uppercase tracking-wider">Calibration Status</span>
+              <span className="text-[#647067] block text-[11px] font-bold uppercase tracking-wider">
+                Calibration Status
+              </span>
               <div className="mt-1.5">
                 <CalibrationStatusBadge
                   status={equipment.calibrationHealth?.status}
@@ -159,30 +175,33 @@ const EquipmentPublicView = () => {
           </div>
 
           {/* Calibration Notice */}
-          <div className="text-xs text-slate-400 flex items-center justify-between">
+          <div className="text-xs text-[#647067] flex items-center justify-between font-medium">
             <span>Next Calibration Due:</span>
-            <span className="font-mono font-bold text-white">
-              {equipment.nextCalibrationDate ? new Date(equipment.nextCalibrationDate).toLocaleDateString() : 'N/A (Exempt)'}
+            <span className="font-mono font-bold text-[#172033]">
+              {equipment.nextCalibrationDate
+                ? new Date(equipment.nextCalibrationDate).toLocaleDateString()
+                : 'N/A (Exempt)'}
             </span>
           </div>
 
           {/* QR Code Identification Card */}
           {equipment.qrCodeDataUrl && (
-            <div className="flex items-center gap-4 p-3.5 rounded-2xl bg-white/[0.04] border border-white/10">
-              <div className="p-2 bg-white rounded-xl shrink-0 shadow-md">
+            <div className="flex items-center gap-4 p-3.5 rounded-2xl bg-[#F7F9F7] border border-[#E5EBE6]">
+              <div className="p-2 bg-white rounded-xl shrink-0 border border-[#E5EBE6] shadow-sm">
                 <img src={equipment.qrCodeDataUrl} alt="Equipment QR Code" className="w-16 h-16" />
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-xs font-bold text-white flex items-center gap-1.5">
-                  <QrCode className="w-3.5 h-3.5 text-cyan-400" />
+                <p className="text-xs font-bold text-[#172033] flex items-center gap-1.5">
+                  <QrCode className="w-3.5 h-3.5 text-[#087A35]" />
                   Verified Equipment QR Code
                 </p>
-                <p className="text-[11px] text-slate-400 font-mono mt-0.5 truncate">
-                  ID: <span className="text-cyan-300 font-bold">{equipment.publicId}</span>
+                <p className="text-[11px] text-[#647067] font-mono mt-0.5 truncate">
+                  ID: <span className="text-[#087A35] font-bold">{equipment.publicId}</span>
                 </p>
                 <button
+                  type="button"
                   onClick={() => window.print()}
-                  className="mt-1 text-[11px] text-cyan-400 hover:text-cyan-300 font-semibold inline-flex items-center gap-1 cursor-pointer transition"
+                  className="mt-1.5 text-[11px] text-[#087A35] hover:text-[#075C2B] font-bold inline-flex items-center gap-1 cursor-pointer transition"
                 >
                   <Printer className="w-3 h-3" />
                   Print / Save QR Label
@@ -192,10 +211,10 @@ const EquipmentPublicView = () => {
           )}
 
           {/* Action: Raise Ticket Button */}
-          <div className="pt-1">
+          <div className="pt-2">
             <Link
               to={`/equipment/${equipment.publicId}/report`}
-              className="w-full flex items-center justify-center gap-2 py-3.5 bg-gradient-to-r from-rose-600 to-rose-700 hover:from-rose-500 hover:to-rose-600 text-white font-bold rounded-2xl text-xs transition shadow-lg shadow-rose-600/30 transform hover:-translate-y-0.5"
+              className="w-full flex items-center justify-center gap-2 py-3.5 bg-red-600 hover:bg-red-700 text-white font-bold rounded-2xl text-xs sm:text-sm transition shadow-sm cursor-pointer"
             >
               <Wrench className="w-4 h-4" />
               Report Fault / Damage (Raise Ticket)
@@ -203,19 +222,19 @@ const EquipmentPublicView = () => {
           </div>
         </div>
 
-        {/* Track Ticket Link */}
+        {/* Track Ticket / Sign In Link */}
         <div className="text-center mt-6">
           <Link
             to="/login?role=Student"
-            className="text-xs text-slate-400 hover:text-cyan-300 font-semibold inline-flex items-center gap-1.5 transition"
+            className="text-xs text-[#647067] hover:text-[#087A35] font-semibold inline-flex items-center gap-1.5 transition"
           >
-            Already submitted a fault? Sign in as Student <ArrowRight className="w-3.5 h-3.5 text-cyan-400" />
+            Already submitted a fault report? Sign in as Student <ArrowRight className="w-3.5 h-3.5 text-[#087A35]" />
           </Link>
         </div>
       </div>
 
-      <footer className="text-center text-[11px] text-slate-500 py-4 mt-8 relative z-10">
-        Local Lab Equipment Calibration & Fault Tracking System • Group G137
+      <footer className="text-center text-[11px] text-[#647067] py-4 mt-8">
+        Local Lab Equipment Calibration & Fault Tracking System • LabEquip
       </footer>
     </div>
   );
