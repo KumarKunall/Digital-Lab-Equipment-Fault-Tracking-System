@@ -11,21 +11,20 @@ import {
   Printer,
   CheckCircle2,
   AlertCircle,
-  X,
   Search,
   ExternalLink,
-  Sparkles,
-  LayoutDashboard,
-  Calendar,
-  Building2,
-  ShieldCheck,
-  Loader2,
   Download,
   Copy,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
+  Loader2,
+  Building2,
+  Calendar
 } from 'lucide-react';
 import { OperationalStatusBadge, CalibrationStatusBadge } from '../../utils/statusBadges';
+import PageHeader from '../../components/common/PageHeader';
+import Modal from '../../components/common/Modal';
+import EmptyState from '../../components/common/EmptyState';
 
 const EquipmentManagement = () => {
   const { user } = useAuth();
@@ -38,10 +37,10 @@ const EquipmentManagement = () => {
   const [showQrModal, setShowQrModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
 
-  // Active QR state (pre-loaded from item or fetched)
+  // Active QR state
   const [qrData, setQrData] = useState(null);
   const [qrLoading, setQrLoading] = useState(false);
-  const [expandedQrId, setExpandedQrId] = useState(null); // Inline QR view in table row
+  const [expandedQrId, setExpandedQrId] = useState(null);
   const [copiedId, setCopiedId] = useState(null);
 
   // Active Edit state
@@ -49,13 +48,17 @@ const EquipmentManagement = () => {
   const [editStatus, setEditStatus] = useState('Ready to Use');
   const [editLocation, setEditLocation] = useState('');
 
-  // Add Form states (Requirement 4.A)
+  // Add Form states
   const todayStr = new Date().toISOString().split('T')[0];
   const [name, setName] = useState('');
   const [serialNumber, setSerialNumber] = useState('');
   const [model, setModel] = useState('');
   const [location, setLocation] = useState('');
   const [additionDate, setAdditionDate] = useState(todayStr);
+  const [installationDate, setInstallationDate] = useState(todayStr);
+  const [operationalStatus, setOperationalStatus] = useState('Ready to Use');
+  const [selectedLabId, setSelectedLabId] = useState('');
+  const [labs, setLabs] = useState([]);
   const [requiresCalibration, setRequiresCalibration] = useState(true);
   const [calibrationIntervalDays, setCalibrationIntervalDays] = useState(180);
   const [error, setError] = useState('');
@@ -77,16 +80,36 @@ const EquipmentManagement = () => {
     fetchEquipment();
   }, [search]);
 
-  // Open QR directly from the row on the SAME page (zero wait time)
+  // Fetch available labs for assignment dropdown
+  useEffect(() => {
+    const fetchLabs = async () => {
+      try {
+        const res = await api.get('/labs');
+        const labList = res.data.data || [];
+        setLabs(labList);
+        if (labList.length > 0) {
+          const defaultLab = user?.assignedLabId?._id || user?.assignedLabId || labList[0]._id;
+          setSelectedLabId(defaultLab);
+        }
+      } catch (err) {
+        console.error('Failed to load laboratories:', err);
+      }
+    };
+    fetchLabs();
+  }, [user]);
+
+  // Open QR modal directly from the item
   const handleSelectQrItem = (item) => {
-    if (item.qrCodeDataUrl) {
+    const qrImg = item.qrCodeDataUrl || item.qrDataUrl;
+    if (qrImg) {
       setQrData({
         publicId: item.publicId,
         equipmentName: item.name,
         serialNumber: item.serialNumber,
         labName: item.labId?.labName || user?.assignedLab?.labName || 'Laboratory',
         labBlock: item.labId?.labBlock || user?.assignedLab?.labBlock || '',
-        qrCodeDataUrl: item.qrCodeDataUrl,
+        qrCodeDataUrl: qrImg,
+        qrDataUrl: qrImg,
         targetUrl: item.targetUrl || `${window.location.origin}/equipment/${item.publicId}`
       });
       setShowQrModal(true);
@@ -102,7 +125,13 @@ const EquipmentManagement = () => {
     setShowQrModal(true);
     try {
       const res = await api.get(`/equipment/${id}/qr`);
-      setQrData(res.data.data);
+      const d = res.data.data;
+      const qrImg = d.qrDataUrl || d.qrCodeDataUrl;
+      setQrData({
+        ...d,
+        qrCodeDataUrl: qrImg,
+        qrDataUrl: qrImg
+      });
     } catch (err) {
       alert(err.response?.data?.message || 'Failed to generate QR code');
       setShowQrModal(false);
@@ -111,80 +140,137 @@ const EquipmentManagement = () => {
     }
   };
 
-  // Toggle inline QR card right on the same page below the row
-  const toggleInlineQr = (id) => {
-    setExpandedQrId((prev) => (prev === id ? null : id));
+  const handleDownloadQr = () => {
+    const qrImg = qrData?.qrCodeDataUrl || qrData?.qrDataUrl;
+    if (!qrImg) return;
+    const link = document.createElement('a');
+    link.href = qrImg;
+    link.download = `QR_${(qrData.equipmentName || 'equipment').replace(/\s+/g, '_')}_${qrData.serialNumber || qrData.publicId}.png`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
-  // Download QR Code as PNG file
-  const handleDownloadQr = (dataUrl, publicId, eqName) => {
-    if (!dataUrl) return;
-    const a = document.createElement('a');
-    a.href = dataUrl;
-    a.download = `QR-${publicId}-${eqName.replace(/\s+/g, '_')}.png`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-  };
-
-  const copyUrl = (url, id) => {
-    navigator.clipboard.writeText(url);
-    setCopiedId(id);
-    setTimeout(() => setCopiedId(null), 2500);
+  const handleCopyPublicId = (pubId) => {
+    navigator.clipboard.writeText(pubId);
+    setCopiedId(pubId);
+    setTimeout(() => setCopiedId(null), 2000);
   };
 
   // Open Edit Modal
   const handleOpenEdit = (item) => {
     setSelectedItem(item);
-    setEditStatus(item.operationalStatus);
-    setEditLocation(item.location);
+    setEditStatus(item.operationalStatus || 'Ready to Use');
+    setEditLocation(item.location || '');
+    setError('');
     setShowEditModal(true);
   };
 
-  // Submit Edit
-  const handleUpdateEquipment = async (e) => {
+  // Reset Add Form fields
+  const handleResetForm = () => {
+    setName('');
+    setSerialNumber('');
+    setModel('');
+    setLocation('');
+    setAdditionDate(todayStr);
+    setInstallationDate(todayStr);
+    setOperationalStatus('Ready to Use');
+    setRequiresCalibration(true);
+    setCalibrationIntervalDays(180);
+    setError('');
+    if (labs.length > 0) {
+      setSelectedLabId(user?.assignedLabId?._id || user?.assignedLabId || labs[0]._id);
+    }
+  };
+
+  // Handle Edit Submit
+  const handleEditSubmit = async (e) => {
     e.preventDefault();
+    setSubmitLoading(true);
+    setError('');
+
     try {
       await api.patch(`/equipment/${selectedItem._id}`, {
         operationalStatus: editStatus,
         location: editLocation
       });
+
       setShowEditModal(false);
       setSuccessMsg(`Equipment '${selectedItem.name}' updated successfully.`);
       fetchEquipment();
       setTimeout(() => setSuccessMsg(''), 4000);
     } catch (err) {
-      alert(err.response?.data?.message || 'Failed to update equipment');
+      setError(err.response?.data?.message || 'Failed to update equipment');
+    } finally {
+      setSubmitLoading(false);
     }
   };
 
-  // Submit Add Equipment (Requirement 4.A)
-  const handleCreateEquipment = async (e) => {
+  // Handle Archive
+  const handleArchive = async (id, eqName) => {
+    if (!window.confirm(`Are you sure you want to archive '${eqName}'? It will be removed from student view.`)) {
+      return;
+    }
+
+    try {
+      await api.patch(`/equipment/${id}/archive`);
+      setSuccessMsg(`Equipment '${eqName}' has been archived.`);
+      fetchEquipment();
+      setTimeout(() => setSuccessMsg(''), 4000);
+    } catch (err) {
+      alert(err.response?.data?.message || 'Failed to archive equipment');
+    }
+  };
+
+  // Handle Add Equipment Submit
+  const handleAddSubmit = async (e) => {
     e.preventDefault();
     setError('');
+
+    // Duplicate serial number check against current catalog
+    const isDuplicate = equipment.some(
+      (eq) => eq.serialNumber && eq.serialNumber.trim().toLowerCase() === serialNumber.trim().toLowerCase()
+    );
+    if (isDuplicate) {
+      setError(`An instrument with serial number '${serialNumber.trim()}' already exists in this catalog.`);
+      return;
+    }
+
     setSubmitLoading(true);
 
     try {
-      await api.post('/equipment', {
-        name,
-        serialNumber,
-        model,
-        location,
+      const payload = {
+        name: name.trim(),
+        serialNumber: serialNumber.trim(),
+        model: model ? model.trim() : '',
+        location: location.trim(),
         additionDate,
-        calibrationIntervalDays: requiresCalibration ? Number(calibrationIntervalDays) : null
-      });
+        installationDate: installationDate || additionDate,
+        operationalStatus,
+        requiresCalibration,
+        calibrationIntervalDays: requiresCalibration ? Number(calibrationIntervalDays) : undefined
+      };
+
+      if (selectedLabId) {
+        payload.labId = selectedLabId;
+      }
+
+      const res = await api.post('/equipment', payload);
+      const newEquipment = res.data.data;
 
       setShowAddModal(false);
-      setName('');
-      setSerialNumber('');
-      setModel('');
-      setLocation('');
-      setAdditionDate(todayStr);
-      setRequiresCalibration(true);
-      setCalibrationIntervalDays(180);
-      setSuccessMsg(`Equipment registered with damageCount=0 and unique Public QR ID.`);
-      fetchEquipment();
-      setTimeout(() => setSuccessMsg(''), 4000);
+      handleResetForm();
+      setSuccessMsg(`Equipment '${newEquipment.name}' created successfully with QR ID: ${newEquipment.publicId}`);
+
+      // Refresh equipment catalog
+      await fetchEquipment();
+
+      // Automatically generate and present the QR code dialog
+      if (newEquipment._id) {
+        handleOpenQr(newEquipment._id);
+      }
+
+      setTimeout(() => setSuccessMsg(''), 5000);
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to add equipment');
     } finally {
@@ -192,295 +278,205 @@ const EquipmentManagement = () => {
     }
   };
 
-  // Archive Equipment
-  const handleArchive = async (id, eqName) => {
-    if (!window.confirm(`Are you sure you want to archive '${eqName}'? Fault history will be preserved.`)) return;
-
-    try {
-      await api.patch(`/equipment/${id}/archive`);
-      fetchEquipment();
-      setSuccessMsg(`Equipment '${eqName}' archived successfully.`);
-      setTimeout(() => setSuccessMsg(''), 4000);
-    } catch (err) {
-      alert('Failed to archive equipment');
-    }
-  };
-
   return (
-    <div className="p-6 sm:p-8 max-w-7xl mx-auto w-full space-y-7">
+    <div className="p-5 sm:p-8 max-w-7xl mx-auto w-full space-y-7">
       
-      {/* Header Banner */}
-      <div className="relative rounded-3xl p-7 border border-white/10 bg-gradient-to-r from-[#111f38]/90 via-[#0d192e]/90 to-[#0a1426]/90 backdrop-blur-xl shadow-2xl overflow-hidden flex flex-col sm:flex-row sm:items-center justify-between gap-5">
-        <div>
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-400/20 text-cyan-300 text-[11px] font-bold tracking-wider uppercase mb-2">
-            <Cpu className="w-3.5 h-3.5 text-cyan-400" />
-            LABORATORY INVENTORY
-          </div>
-          <h2 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
-            Equipment Inventory & QR Labels
-          </h2>
-          <p className="text-xs sm:text-sm text-slate-400 mt-1 max-w-2xl leading-relaxed">
-            Registered for <span className="text-white font-semibold">{user?.assignedLab?.labName || 'Your Assigned Laboratory'}</span>. QR identification labels are rendered directly on this page for physical printing.
-          </p>
-        </div>
-
-        <div className="flex items-center gap-3 shrink-0 self-start sm:self-auto">
-          {/* Go to Main Dashboard Button (Requirement 4.B) */}
-          <Link
-            to="/assistant"
-            className="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-white/10 hover:bg-white/15 text-white text-xs font-semibold border border-white/10 transition"
-          >
-            <LayoutDashboard className="w-3.5 h-3.5 text-cyan-400" />
-            Go to Main Dashboard
-          </Link>
-
+      {/* Header */}
+      <PageHeader
+        badge="Laboratory Inventory"
+        badgeIcon={Cpu}
+        title="Equipment Management"
+        description="Catalog laboratory instruments, manage operational status, generate high-resolution QR labels, and track physical bench allocations."
+        actions={
           <button
-            onClick={() => setShowAddModal(true)}
-            className="inline-flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 text-white rounded-xl text-xs font-bold shadow-lg shadow-cyan-500/20 transition-all transform hover:-translate-y-0.5 cursor-pointer"
+            type="button"
+            onClick={() => {
+              setError('');
+              setShowAddModal(true);
+            }}
+            className="inline-flex items-center gap-2 px-4 py-2.5 bg-[#087A35] hover:bg-[#075C2B] text-white rounded-xl text-xs font-bold transition shadow-sm cursor-pointer"
           >
             <Plus className="w-4 h-4" />
-            Add Equipment
+            + Add New Equipment
           </button>
-        </div>
-      </div>
+        }
+      />
 
+      {/* Success banner */}
       {successMsg && (
-        <div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs flex items-center gap-2.5">
-          <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-400" />
+        <div className="p-4 rounded-2xl bg-[#EAF5ED] border border-[#BDE3CA] text-[#087A35] text-xs font-semibold flex items-center gap-2.5 animate-in fade-in">
+          <CheckCircle2 className="w-4 h-4 text-[#087A35] shrink-0" />
           <span>{successMsg}</span>
         </div>
       )}
 
-      {/* Search and Count Bar */}
-      <div className="rounded-2xl p-4 border border-white/10 bg-[#0d182e]/80 backdrop-blur-xl flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div className="relative w-full max-w-md">
-          <Search className="w-4 h-4 text-cyan-400 absolute left-3.5 top-3" />
+      {/* Search Bar */}
+      <div className="bg-white border border-[#E5EBE6] rounded-2xl p-4 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div className="relative w-full sm:w-96">
           <input
             type="text"
-            placeholder="Search by equipment name or serial number..."
+            placeholder="Search equipment name, serial number, model, bench..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full bg-[#081124] border border-white/15 rounded-xl pl-10 pr-4 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400 transition"
+            className="w-full bg-[#F7F9F7] border border-[#E5EBE6] rounded-xl pl-9 pr-4 py-2.5 text-xs text-[#172033] placeholder-[#647067] focus:outline-none focus:border-[#087A35] focus:bg-white transition"
           />
+          <Search className="w-4 h-4 text-[#647067] absolute left-3 top-3" />
         </div>
-        <span className="text-xs font-semibold text-slate-400 font-mono">
-          Showing <span className="text-cyan-400 font-bold">{equipment.length}</span> instruments in inventory
+        <span className="text-xs text-[#647067] font-semibold">
+          {equipment.length} Instruments in Catalog
         </span>
       </div>
 
       {/* Equipment Table */}
-      <div className="rounded-3xl border border-white/10 bg-[#0d182e]/80 backdrop-blur-xl shadow-2xl overflow-hidden">
+      <div className="rounded-3xl border border-[#E5EBE6] bg-white shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
-            <thead className="bg-white/[0.03] text-slate-400 font-bold border-b border-white/10 uppercase tracking-wider text-[11px]">
+            <thead className="bg-[#F7F9F7] text-[#647067] font-bold border-b border-[#E5EBE6] uppercase tracking-wider text-[11px]">
               <tr>
-                <th className="px-5 py-4 text-center">QR Code</th>
-                <th className="px-6 py-4">Equipment Details</th>
+                <th className="px-6 py-4">Instrument Details</th>
+                <th className="px-6 py-4">Model & Serial</th>
                 <th className="px-6 py-4">Bench Location</th>
-                <th className="px-6 py-4">Added On</th>
                 <th className="px-6 py-4">Operational Status</th>
-                <th className="px-6 py-4">Calibration Status</th>
-                <th className="px-6 py-4 text-center">Damage Count</th>
+                <th className="px-6 py-4">Calibration Health</th>
                 <th className="px-6 py-4 text-right">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-white/[0.06]">
+            <tbody className="divide-y divide-[#E5EBE6]">
               {loading ? (
                 <tr>
-                  <td colSpan="8" className="px-6 py-14 text-center text-slate-400">
-                    <div className="flex flex-col items-center justify-center gap-2">
-                      <Loader2 className="w-6 h-6 animate-spin text-cyan-400" />
-                      <span>Loading laboratory equipment...</span>
-                    </div>
+                  <td colSpan="6" className="px-6 py-12 text-center text-[#647067]">
+                    <Loader2 className="w-6 h-6 animate-spin mx-auto text-[#087A35] mb-2" />
+                    Loading equipment catalog...
                   </td>
                 </tr>
               ) : equipment.length > 0 ? (
-                equipment.map((eq) => {
-                  const isExpanded = expandedQrId === eq._id;
-                  const targetUrl = eq.targetUrl || `${window.location.origin}/equipment/${eq.publicId}`;
-                  return (
-                    <React.Fragment key={eq._id}>
-                      <tr className="hover:bg-white/[0.03] transition-colors">
-                        {/* Direct QR Code Thumbnail on Same Page */}
-                        <td className="px-5 py-4 text-center">
-                          <div className="inline-flex flex-col items-center gap-1.5">
-                            {eq.qrCodeDataUrl ? (
-                              <button
-                                type="button"
-                                onClick={() => handleSelectQrItem(eq)}
-                                title="Click to view full printable QR"
-                                className="p-1 bg-white rounded-xl shadow-md hover:scale-105 transition-all border border-white/20 group cursor-pointer"
-                              >
-                                <img
-                                  src={eq.qrCodeDataUrl}
-                                  alt="QR"
-                                  className="w-12 h-12 object-contain rounded"
-                                />
-                              </button>
-                            ) : (
-                              <button
-                                type="button"
-                                onClick={() => handleOpenQr(eq._id)}
-                                className="p-2 rounded-xl bg-cyan-500/15 hover:bg-cyan-500/25 text-cyan-300 border border-cyan-400/30 transition cursor-pointer"
-                                title="Generate QR Code"
-                              >
-                                <QrCode className="w-5 h-5" />
-                              </button>
-                            )}
+                equipment.map((item) => {
+                  const isExpanded = expandedQrId === item._id;
 
-                            <div className="flex items-center gap-1">
-                              <span className="text-[10px] text-cyan-300 font-mono font-bold tracking-tight">
-                                {eq.publicId}
+                  return (
+                    <React.Fragment key={item._id}>
+                      <tr className="hover:bg-[#F7F9F7]/60 transition-colors">
+                        <td className="px-6 py-4">
+                          <div className="flex items-center gap-3">
+                            <div className="w-9 h-9 rounded-xl bg-[#EAF5ED] text-[#087A35] border border-[#BDE3CA] flex items-center justify-center shrink-0">
+                              <Cpu className="w-4 h-4" />
+                            </div>
+                            <div>
+                              <span className="font-bold text-[#172033] block text-sm">{item.name}</span>
+                              <span className="text-[11px] text-[#647067]">
+                                Added: {new Date(item.additionDate || item.createdAt).toLocaleDateString()}
                               </span>
-                              <button
-                                type="button"
-                                onClick={() => toggleInlineQr(eq._id)}
-                                title={isExpanded ? 'Hide inline preview' : 'Show inline preview'}
-                                className="text-slate-400 hover:text-cyan-300 transition"
-                              >
-                                {isExpanded ? (
-                                  <ChevronUp className="w-3 h-3 text-cyan-400" />
-                                ) : (
-                                  <ChevronDown className="w-3 h-3" />
-                                )}
-                              </button>
                             </div>
                           </div>
                         </td>
 
                         <td className="px-6 py-4">
-                          <span className="font-bold text-white block text-sm">{eq.name}</span>
-                          <span className="font-mono text-[11px] text-slate-400">
-                            SN: {eq.serialNumber} {eq.model ? `• ${eq.model}` : ''}
+                          <span className="font-mono text-xs font-bold text-[#172033] block">
+                            SN: {item.serialNumber}
                           </span>
+                          <span className="text-[#647067] text-[11px]">{item.model || 'Standard Model'}</span>
                         </td>
 
-                        <td className="px-6 py-4 text-slate-300 font-medium">{eq.location}</td>
+                        <td className="px-6 py-4 text-[#172033] font-medium">{item.location}</td>
 
-                        <td className="px-6 py-4 font-mono text-slate-400 whitespace-nowrap">
-                          {eq.additionDate || eq.installationDate
-                            ? new Date(eq.additionDate || eq.installationDate).toLocaleDateString()
-                            : '—'}
+                        <td className="px-6 py-4">
+                          <OperationalStatusBadge status={item.operationalStatus} />
                         </td>
 
                         <td className="px-6 py-4">
-                          <OperationalStatusBadge status={eq.operationalStatus} />
+                          <CalibrationStatusBadge
+                            status={item.calibrationHealth?.status}
+                            daysRemaining={item.calibrationHealth?.daysRemaining}
+                          />
                         </td>
 
-                        <td className="px-6 py-4">
-                          {eq.nextCalibrationDate ? (
-                            <CalibrationStatusBadge
-                              status={eq.calibrationHealth?.status}
-                              daysRemaining={eq.calibrationHealth?.daysRemaining}
-                            />
-                          ) : (
-                            <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-slate-800 text-slate-400 border border-white/10">
-                              Non-Calibrated
-                            </span>
-                          )}
-                        </td>
+                        <td className="px-6 py-4 text-right">
+                          <div className="flex items-center justify-end gap-1.5">
+                            {/* Inline QR Toggle */}
+                            <button
+                              type="button"
+                              onClick={() => setExpandedQrId(isExpanded ? null : item._id)}
+                              className={`p-2 rounded-xl transition cursor-pointer border ${
+                                isExpanded
+                                  ? 'bg-[#087A35] text-white border-[#087A35]'
+                                  : 'bg-[#EAF5ED] text-[#087A35] hover:bg-[#DDF2E3] border-[#BDE3CA]'
+                              }`}
+                              title="Toggle inline QR code"
+                            >
+                              <QrCode className="w-3.5 h-3.5" />
+                            </button>
 
-                        <td className="px-6 py-4 text-center">
-                          <span
-                            className={`inline-block px-3 py-1 rounded-lg text-xs font-bold font-mono border ${
-                              eq.damageCount > 0
-                                ? 'bg-rose-500/15 border-rose-500/30 text-rose-300'
-                                : 'bg-slate-800 border-white/10 text-slate-300'
-                            }`}
-                          >
-                            {eq.damageCount}
-                          </span>
-                        </td>
+                            {/* Full QR Modal */}
+                            <button
+                              type="button"
+                              onClick={() => handleSelectQrItem(item)}
+                              className="px-2.5 py-1.5 rounded-xl bg-white hover:bg-slate-50 border border-[#CBD5E1] text-[#172033] text-xs font-semibold transition"
+                              title="Open QR dialog with print and download"
+                            >
+                              Print QR
+                            </button>
 
-                        <td className="px-6 py-4 text-right space-x-2">
-                          <button
-                            type="button"
-                            onClick={() => handleSelectQrItem(eq)}
-                            title="View & Print QR Code"
-                            className="p-2 rounded-lg bg-cyan-500/15 hover:bg-cyan-500/25 text-cyan-300 border border-cyan-400/30 transition cursor-pointer"
-                          >
-                            <QrCode className="w-4 h-4" />
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => handleOpenEdit(eq)}
-                            title="Edit Status / Location"
-                            className="p-2 rounded-lg bg-blue-500/15 hover:bg-blue-500/25 text-blue-300 border border-blue-400/30 transition cursor-pointer"
-                          >
-                            <Edit2 className="w-4 h-4" />
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => handleArchive(eq._id, eq.name)}
-                            title="Archive Equipment"
-                            className="p-2 rounded-lg bg-rose-500/15 hover:bg-rose-500/25 text-rose-300 border border-rose-500/30 transition cursor-pointer"
-                          >
-                            <Archive className="w-4 h-4" />
-                          </button>
+                            {/* Edit */}
+                            <button
+                              type="button"
+                              onClick={() => handleOpenEdit(item)}
+                              className="p-2 rounded-xl text-[#647067] hover:text-[#172033] hover:bg-slate-100 transition cursor-pointer"
+                              title="Edit location or status"
+                            >
+                              <Edit2 className="w-3.5 h-3.5" />
+                            </button>
+
+                            {/* Archive */}
+                            <button
+                              type="button"
+                              onClick={() => handleArchive(item._id, item.name)}
+                              className="p-2 rounded-xl text-red-600 hover:text-red-700 hover:bg-red-50 transition cursor-pointer"
+                              title="Archive equipment"
+                            >
+                              <Archive className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
                         </td>
                       </tr>
 
-                      {/* Same-Page Inline QR Preview Drawer */}
-                      {isExpanded && (
-                        <tr className="bg-[#081226]/90 border-t border-b border-cyan-400/20">
-                          <td colSpan="8" className="p-6">
-                            <div className="flex flex-col md:flex-row items-center gap-6 bg-[#0c1833] border border-cyan-400/20 rounded-2xl p-5 shadow-inner">
-                              <div className="p-3 bg-white rounded-2xl shadow-xl shrink-0">
-                                <img
-                                  src={eq.qrCodeDataUrl}
-                                  alt="Equipment QR Code"
-                                  className="w-36 h-36 mx-auto object-contain"
-                                />
-                              </div>
-
-                              <div className="flex-1 space-y-2 text-center md:text-left">
-                                <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-cyan-500/15 border border-cyan-400/30 text-cyan-300 text-[10px] font-bold uppercase tracking-wider">
-                                  <QrCode className="w-3 h-3" />
-                                  Active Physical Label QR
+                      {/* Inline Expanded QR Code Row */}
+                      {isExpanded && (item.qrCodeDataUrl || item.qrDataUrl) && (
+                        <tr className="bg-[#EAF5ED]/30 border-b border-[#E5EBE6]">
+                          <td colSpan="6" className="px-6 py-4">
+                            <div className="flex flex-col sm:flex-row items-center gap-6 p-4 bg-white border border-[#BDE3CA] rounded-2xl shadow-sm">
+                              <img
+                                src={item.qrCodeDataUrl || item.qrDataUrl}
+                                alt="Inline QR"
+                                className="w-24 h-24 p-1.5 bg-white border border-[#E5EBE6] rounded-xl shadow-sm"
+                              />
+                              <div className="flex-1 space-y-1.5 text-center sm:text-left">
+                                <div className="flex items-center justify-center sm:justify-start gap-2">
+                                  <span className="font-extrabold text-sm text-[#172033]">{item.name}</span>
+                                  <span className="font-mono text-xs text-[#087A35] font-bold">
+                                    ID: {item.publicId}
+                                  </span>
                                 </div>
-                                <h4 className="text-base font-bold text-white">{eq.name}</h4>
-                                <p className="text-xs text-slate-300 font-mono">
-                                  SN: <span className="text-white font-bold">{eq.serialNumber}</span> • Bench: {eq.location}
+                                <p className="text-xs text-[#647067]">
+                                  Target Public URL: {item.targetUrl || `${window.location.origin}/equipment/${item.publicId}`}
                                 </p>
-                                <p className="text-xs text-slate-400">
-                                  Public Scan URL:
-                                  <a
-                                    href={targetUrl}
-                                    target="_blank"
-                                    rel="noreferrer"
-                                    className="ml-1 text-cyan-300 hover:underline font-mono text-[11px] inline-flex items-center gap-1"
+                                <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 pt-1">
+                                  <button
+                                    type="button"
+                                    onClick={() => handleCopyPublicId(item.publicId)}
+                                    className="px-3 py-1.5 rounded-lg bg-[#EAF5ED] border border-[#BDE3CA] text-[#087A35] text-xs font-bold flex items-center gap-1.5"
                                   >
-                                    {targetUrl}
-                                    <ExternalLink className="w-3 h-3" />
-                                  </a>
-                                </p>
-                              </div>
-
-                              <div className="flex flex-wrap md:flex-col gap-2 shrink-0">
-                                <button
-                                  type="button"
-                                  onClick={() => handleSelectQrItem(eq)}
-                                  className="inline-flex items-center gap-1.5 px-4 py-2 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 text-white rounded-xl text-xs font-bold shadow-md cursor-pointer transition"
-                                >
-                                  <Printer className="w-3.5 h-3.5" />
-                                  Print QR Label
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => handleDownloadQr(eq.qrCodeDataUrl, eq.publicId, eq.name)}
-                                  className="inline-flex items-center gap-1.5 px-4 py-2 bg-white/10 hover:bg-white/15 text-white border border-white/15 rounded-xl text-xs font-semibold cursor-pointer transition"
-                                >
-                                  <Download className="w-3.5 h-3.5 text-cyan-400" />
-                                  Download PNG
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => copyUrl(targetUrl, eq._id)}
-                                  className="inline-flex items-center gap-1.5 px-4 py-2 bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white border border-white/10 rounded-xl text-xs font-semibold cursor-pointer transition"
-                                >
-                                  <Copy className="w-3.5 h-3.5 text-slate-400" />
-                                  {copiedId === eq._id ? 'Copied URL!' : 'Copy Scan URL'}
-                                </button>
+                                    <Copy className="w-3.5 h-3.5" />
+                                    {copiedId === item.publicId ? 'Copied ID!' : 'Copy ID'}
+                                  </button>
+                                  <Link
+                                    to={`/equipment/${item.publicId}`}
+                                    target="_blank"
+                                    className="px-3 py-1.5 rounded-lg bg-white border border-[#CBD5E1] text-[#172033] text-xs font-semibold flex items-center gap-1.5 hover:bg-slate-50"
+                                  >
+                                    <ExternalLink className="w-3.5 h-3.5 text-[#087A35]" />
+                                    Open Student View
+                                  </Link>
+                                </div>
                               </div>
                             </div>
                           </td>
@@ -491,8 +487,12 @@ const EquipmentManagement = () => {
                 })
               ) : (
                 <tr>
-                  <td colSpan="8" className="px-6 py-10 text-center text-slate-400">
-                    No equipment found in inventory. Click "Add Equipment" to register instruments.
+                  <td colSpan="6">
+                    <EmptyState
+                      icon={Cpu}
+                      title="No equipment found"
+                      description="Adjust your search term or add an instrument to the laboratory."
+                    />
                   </td>
                 </tr>
               )}
@@ -501,305 +501,368 @@ const EquipmentManagement = () => {
         </div>
       </div>
 
-      {/* Add Equipment Modal (Requirement 4.A) */}
-      {showAddModal && (
-        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="bg-[#0f1d38] border border-white/15 rounded-3xl w-full max-w-lg p-6 sm:p-7 shadow-2xl relative text-white max-h-[90vh] overflow-y-auto">
-            <button
-              onClick={() => setShowAddModal(false)}
-              className="absolute top-5 right-5 text-slate-400 hover:text-white cursor-pointer"
-            >
-              <X className="w-5 h-5" />
-            </button>
+      {/* ── Add Equipment Modal ────────────────────────────────────────── */}
+      <Modal
+        isOpen={showAddModal}
+        onClose={() => {
+          handleResetForm();
+          setShowAddModal(false);
+        }}
+        title="Add Equipment to Inventory"
+        subtitle="Register instrument and automatically generate unique QR identification"
+      >
+        {error && (
+          <div className="p-3.5 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs flex items-center gap-2 mb-4">
+            <AlertCircle className="w-4 h-4 shrink-0" />
+            <span>{error}</span>
+          </div>
+        )}
 
-            <div className="flex items-center gap-3 mb-5">
-              <div className="w-10 h-10 rounded-2xl bg-cyan-500/15 border border-cyan-400/25 text-cyan-400 flex items-center justify-center">
-                <Plus className="w-5 h-5" />
-              </div>
+        <form onSubmit={handleAddSubmit} className="space-y-4">
+          <div>
+            <label className="block text-xs font-bold text-[#172033] uppercase tracking-wider mb-1.5">
+              Equipment Name *
+            </label>
+            <input
+              type="text"
+              required
+              placeholder="e.g. Digital Storage Oscilloscope 100MHz"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className="w-full bg-[#F7F9F7] border border-[#E5EBE6] rounded-xl px-4 py-2.5 text-sm text-[#172033] placeholder-[#647067]/60 focus:outline-none focus:border-[#087A35] focus:bg-white transition"
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-bold text-[#172033] uppercase tracking-wider mb-1.5">
+                Serial Number *
+              </label>
+              <input
+                type="text"
+                required
+                placeholder="e.g. DSO-2024-001"
+                value={serialNumber}
+                onChange={(e) => setSerialNumber(e.target.value)}
+                className="w-full bg-[#F7F9F7] border border-[#E5EBE6] rounded-xl px-4 py-2.5 text-sm text-[#172033] placeholder-[#647067]/60 focus:outline-none focus:border-[#087A35] focus:bg-white transition font-mono"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-[#172033] uppercase tracking-wider mb-1.5">
+                Model / Brand / Manufacturer
+              </label>
+              <input
+                type="text"
+                placeholder="e.g. Tektronix TBS1102"
+                value={model}
+                onChange={(e) => setModel(e.target.value)}
+                className="w-full bg-[#F7F9F7] border border-[#E5EBE6] rounded-xl px-4 py-2.5 text-sm text-[#172033] placeholder-[#647067]/60 focus:outline-none focus:border-[#087A35] focus:bg-white transition"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-bold text-[#172033] uppercase tracking-wider mb-1.5">
+                Assigned Laboratory
+              </label>
+              {labs.length > 0 ? (
+                <select
+                  value={selectedLabId}
+                  onChange={(e) => setSelectedLabId(e.target.value)}
+                  className="w-full bg-[#F7F9F7] border border-[#E5EBE6] rounded-xl px-4 py-2.5 text-sm text-[#172033] focus:outline-none focus:border-[#087A35] focus:bg-white transition"
+                >
+                  {labs.map((l) => (
+                    <option key={l._id} value={l._id}>
+                      {l.labName} ({l.labBlock})
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <input
+                  type="text"
+                  disabled
+                  value={user?.assignedLab?.labName || 'Current Laboratory'}
+                  className="w-full bg-[#F7F9F7] border border-[#E5EBE6] rounded-xl px-4 py-2.5 text-sm text-[#647067] opacity-80"
+                />
+              )}
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-[#172033] uppercase tracking-wider mb-1.5">
+                Bench / Cabinet Location *
+              </label>
+              <input
+                type="text"
+                required
+                placeholder="e.g. Bench 04, Rack B"
+                value={location}
+                onChange={(e) => setLocation(e.target.value)}
+                className="w-full bg-[#F7F9F7] border border-[#E5EBE6] rounded-xl px-4 py-2.5 text-sm text-[#172033] placeholder-[#647067]/60 focus:outline-none focus:border-[#087A35] focus:bg-white transition"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div>
+              <label className="block text-xs font-bold text-[#172033] uppercase tracking-wider mb-1.5">
+                Operational Status
+              </label>
+              <select
+                value={operationalStatus}
+                onChange={(e) => setOperationalStatus(e.target.value)}
+                className="w-full bg-[#F7F9F7] border border-[#E5EBE6] rounded-xl px-3 py-2.5 text-sm text-[#172033] focus:outline-none focus:border-[#087A35] focus:bg-white transition"
+              >
+                <option value="Ready to Use">Ready to Use</option>
+                <option value="Under Repair">Under Repair</option>
+                <option value="Damaged">Damaged</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-[#172033] uppercase tracking-wider mb-1.5">
+                Purchase Date
+              </label>
+              <input
+                type="date"
+                required
+                value={additionDate}
+                onChange={(e) => setAdditionDate(e.target.value)}
+                className="w-full bg-[#F7F9F7] border border-[#E5EBE6] rounded-xl px-3 py-2.5 text-sm text-[#172033] focus:outline-none focus:border-[#087A35] focus:bg-white transition"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-[#172033] uppercase tracking-wider mb-1.5">
+                Commissioning Date
+              </label>
+              <input
+                type="date"
+                required
+                value={installationDate}
+                onChange={(e) => setInstallationDate(e.target.value)}
+                className="w-full bg-[#F7F9F7] border border-[#E5EBE6] rounded-xl px-3 py-2.5 text-sm text-[#172033] focus:outline-none focus:border-[#087A35] focus:bg-white transition"
+              />
+            </div>
+          </div>
+
+          <div className="p-4 bg-[#F7F9F7] border border-[#E5EBE6] rounded-2xl space-y-3">
+            <label className="flex items-center gap-2.5 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={requiresCalibration}
+                onChange={(e) => setRequiresCalibration(e.target.checked)}
+                className="w-4 h-4 text-[#087A35] accent-[#087A35] rounded"
+              />
+              <span className="text-xs font-bold text-[#172033]">
+                Instrument requires mandatory periodic calibration
+              </span>
+            </label>
+
+            {requiresCalibration && (
               <div>
-                <h3 className="font-bold text-lg text-white">Register New Equipment</h3>
-                <p className="text-xs text-slate-400">
-                  Assigning instrument to your laboratory
-                </p>
+                <label className="block text-xs font-bold text-[#647067] mb-1">
+                  Calibration Interval (Days)
+                </label>
+                <input
+                  type="number"
+                  min="30"
+                  max="730"
+                  value={calibrationIntervalDays}
+                  onChange={(e) => setCalibrationIntervalDays(e.target.value)}
+                  className="w-full bg-white border border-[#E5EBE6] rounded-xl px-3.5 py-2 text-sm text-[#172033] focus:outline-none focus:border-[#087A35]"
+                />
+                <span className="text-[11px] text-[#647067] block mt-1">
+                  Next due date will automatically be set {calibrationIntervalDays} days from commissioning.
+                </span>
+              </div>
+            )}
+          </div>
+
+          <div className="pt-2 flex items-center justify-between gap-3 border-t border-[#E5EBE6]">
+            <button
+              type="button"
+              onClick={handleResetForm}
+              className="px-4 py-2.5 rounded-xl text-xs font-bold text-[#647067] hover:bg-slate-100 border border-[#E5EBE6] transition cursor-pointer"
+            >
+              Reset Form
+            </button>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  handleResetForm();
+                  setShowAddModal(false);
+                }}
+                className="px-4 py-2.5 rounded-xl text-xs font-bold text-[#647067] hover:bg-slate-100 transition cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={submitLoading}
+                className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#087A35] hover:bg-[#075C2B] text-white rounded-xl text-xs font-bold transition shadow-sm disabled:opacity-50 cursor-pointer"
+              >
+                {submitLoading ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Generating QR & Saving...
+                  </>
+                ) : (
+                  'Save & Generate QR'
+                )}
+              </button>
+            </div>
+          </div>
+        </form>
+      </Modal>
+
+      {/* ── Edit Equipment Modal ───────────────────────────────────────── */}
+      {selectedItem && (
+        <Modal
+          isOpen={showEditModal}
+          onClose={() => setShowEditModal(false)}
+          title={`Edit ${selectedItem.name}`}
+          subtitle={`SN: ${selectedItem.serialNumber}`}
+        >
+          {error && (
+            <div className="p-3.5 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs flex items-center gap-2 mb-4">
+              <AlertCircle className="w-4 h-4 shrink-0" />
+              <span>{error}</span>
+            </div>
+          )}
+
+          <form onSubmit={handleEditSubmit} className="space-y-4">
+            <div>
+              <label className="block text-xs font-bold text-[#172033] uppercase tracking-wider mb-1.5">
+                Operational Status
+              </label>
+              <select
+                value={editStatus}
+                onChange={(e) => setEditStatus(e.target.value)}
+                className="w-full bg-[#F7F9F7] border border-[#E5EBE6] rounded-xl px-4 py-2.5 text-sm text-[#172033] focus:outline-none focus:border-[#087A35] focus:bg-white transition"
+              >
+                <option value="Ready to Use">Ready to Use (Operational)</option>
+                <option value="Under Repair">Under Repair (Under Inspection / Maintenance)</option>
+                <option value="Damaged">Damaged (Fault Flagged / Not Operational)</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-[#172033] uppercase tracking-wider mb-1.5">
+                Bench / Storage Location
+              </label>
+              <input
+                type="text"
+                required
+                value={editLocation}
+                onChange={(e) => setEditLocation(e.target.value)}
+                className="w-full bg-[#F7F9F7] border border-[#E5EBE6] rounded-xl px-4 py-2.5 text-sm text-[#172033] focus:outline-none focus:border-[#087A35] focus:bg-white transition"
+              />
+            </div>
+
+            <div className="pt-2 flex items-center justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => setShowEditModal(false)}
+                className="px-4 py-2.5 rounded-xl text-xs font-bold text-[#647067] hover:bg-slate-100 transition"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={submitLoading}
+                className="px-5 py-2.5 bg-[#087A35] hover:bg-[#075C2B] text-white rounded-xl text-xs font-bold transition shadow-sm disabled:opacity-50"
+              >
+                {submitLoading ? 'Updating...' : 'Save Changes'}
+              </button>
+            </div>
+          </form>
+        </Modal>
+      )}
+
+      {/* ── QR Code Preview Modal & Strict Printable Wrapper ──────────── */}
+      <Modal
+        isOpen={showQrModal}
+        onClose={() => {
+          setShowQrModal(false);
+          setQrData(null);
+        }}
+        title="Equipment Identification QR Code"
+        subtitle="Print or download this QR sticker to attach directly to the instrument"
+        maxWidth="max-w-md"
+      >
+        {qrLoading || !qrData ? (
+          <div className="py-12 flex flex-col items-center justify-center gap-3">
+            <Loader2 className="w-8 h-8 text-[#087A35] animate-spin" />
+            <p className="text-xs text-[#647067] font-mono">Loading QR identification...</p>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            
+            {/* Printable QR Target Container */}
+            <div id="printable-qr" className="p-5 bg-white border border-[#E5EBE6] rounded-2xl text-center space-y-3">
+              <div className="border-b border-[#E5EBE6] pb-2">
+                <h4 className="font-extrabold text-base text-[#172033]">{qrData.equipmentName}</h4>
+                <p className="text-xs text-[#647067] font-mono">SN: {qrData.serialNumber}</p>
+                <p className="text-xs text-[#087A35] font-bold">{qrData.labName} • {qrData.labBlock}</p>
+              </div>
+
+              <div className="p-3 bg-white inline-block">
+                <img
+                  src={qrData.qrCodeDataUrl || qrData.qrDataUrl}
+                  alt={`QR for ${qrData.equipmentName}`}
+                  className="w-48 h-48 mx-auto"
+                />
+              </div>
+
+              <div className="text-[11px] text-[#647067] font-mono border-t border-[#E5EBE6] pt-2">
+                Scan with smartphone camera or Google Lens
+                <div className="text-[#087A35] font-bold mt-0.5">ID: {qrData.publicId}</div>
               </div>
             </div>
 
-            {error && (
-              <div className="mb-4 p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs flex items-center gap-2">
-                <AlertCircle className="w-4 h-4 shrink-0" />
-                <span>{error}</span>
-              </div>
-            )}
+            {/* Action Buttons */}
+            <div className="grid grid-cols-2 gap-2.5 pt-2">
+              <button
+                type="button"
+                onClick={() => window.print()}
+                className="py-2.5 px-3 bg-[#087A35] hover:bg-[#075C2B] text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition shadow-sm cursor-pointer"
+              >
+                <Printer className="w-4 h-4" />
+                Print Sticker
+              </button>
 
-            <form onSubmit={handleCreateEquipment} className="space-y-4">
-              {/* Auto-detected Assigned Lab Badge */}
-              <div className="p-3 rounded-2xl bg-cyan-500/10 border border-cyan-400/20 text-cyan-300 text-xs flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Building2 className="w-4 h-4 text-cyan-400" />
-                  <div>
-                    <span className="block text-[10px] text-cyan-400 uppercase font-bold tracking-wider">
-                      Assigned Laboratory (Auto-detected)
-                    </span>
-                    <span className="font-bold text-white text-xs">
-                      {user?.assignedLab?.labName || 'Your Assigned Lab'}
-                    </span>
-                  </div>
-                </div>
-                <span className="text-[10px] font-mono bg-cyan-500/20 px-2 py-0.5 rounded-full border border-cyan-400/30">
-                  Strictly Enforced
-                </span>
-              </div>
+              <button
+                type="button"
+                onClick={handleDownloadQr}
+                className="py-2.5 px-3 bg-[#EAF5ED] hover:bg-[#DDF2E3] text-[#087A35] border border-[#BDE3CA] rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition cursor-pointer"
+              >
+                <Download className="w-4 h-4" />
+                Download PNG
+              </button>
+            </div>
 
-              <div>
-                <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">
-                  Equipment Name *
-                </label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. Digital Storage Oscilloscope"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  className="w-full bg-[#081124] border border-white/15 rounded-xl px-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400 transition"
-                />
-              </div>
+            <div className="flex items-center justify-between text-xs text-[#647067] pt-1">
+              <button
+                type="button"
+                onClick={() => handleCopyPublicId(qrData.publicId)}
+                className="text-[#087A35] font-bold hover:underline flex items-center gap-1"
+              >
+                <Copy className="w-3.5 h-3.5" />
+                {copiedId === qrData.publicId ? 'Copied Public ID!' : 'Copy Public ID'}
+              </button>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">
-                    Serial Number *
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="e.g. DSO-1004"
-                    value={serialNumber}
-                    onChange={(e) => setSerialNumber(e.target.value)}
-                    className="w-full bg-[#081124] border border-white/15 rounded-xl px-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400 font-mono transition"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">
-                    Model / Specification
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="e.g. Tektronix TBS1052B"
-                    value={model}
-                    onChange={(e) => setModel(e.target.value)}
-                    className="w-full bg-[#081124] border border-white/15 rounded-xl px-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400 transition"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">
-                    Bench Location *
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="e.g. Workbench 4, Bay B"
-                    value={location}
-                    onChange={(e) => setLocation(e.target.value)}
-                    className="w-full bg-[#081124] border border-white/15 rounded-xl px-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400 transition"
-                  />
-                </div>
-
-                {/* Equipment Addition Date (Requirement 4.A) */}
-                <div>
-                  <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">
-                    Equipment Addition Date *
-                  </label>
-                  <input
-                    type="date"
-                    required
-                    value={additionDate}
-                    onChange={(e) => setAdditionDate(e.target.value)}
-                    className="w-full bg-[#081124] border border-white/15 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-cyan-400 transition"
-                  />
-                </div>
-              </div>
-
-              {/* Optional Calibration Interval (Requirement 4.A) */}
-              <div className="p-4 rounded-2xl bg-white/[0.03] border border-white/10 space-y-3">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <span className="block text-xs font-bold text-white">Periodic Calibration Required?</span>
-                    <span className="text-[11px] text-slate-400 block mt-0.5">
-                      Uncheck if instrument is damaged, passive, or does not require periodic calibration schedules.
-                    </span>
-                  </div>
-                  <input
-                    type="checkbox"
-                    checked={requiresCalibration}
-                    onChange={(e) => setRequiresCalibration(e.target.checked)}
-                    className="w-4 h-4 accent-cyan-500 rounded cursor-pointer"
-                  />
-                </div>
-
-                {requiresCalibration && (
-                  <div>
-                    <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1">
-                      Calibration Interval (Days)
-                    </label>
-                    <input
-                      type="number"
-                      min="1"
-                      value={calibrationIntervalDays}
-                      onChange={(e) => setCalibrationIntervalDays(e.target.value)}
-                      placeholder="e.g. 180"
-                      className="w-full bg-[#081124] border border-white/15 rounded-xl px-4 py-2 text-sm text-white focus:outline-none focus:border-cyan-400 transition"
-                    />
-                  </div>
-                )}
-              </div>
-
-              <div className="pt-3 flex items-center justify-end gap-3">
-                <button
-                  type="button"
-                  onClick={() => setShowAddModal(false)}
-                  className="px-4 py-2 text-xs font-bold text-slate-400 hover:text-white"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={submitLoading}
-                  className="px-5 py-2.5 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 text-white rounded-xl text-xs font-bold shadow-lg shadow-cyan-500/20 transition disabled:opacity-50 flex items-center gap-2 cursor-pointer"
-                >
-                  {submitLoading && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
-                  Register Instrument
-                </button>
-              </div>
-            </form>
+              <Link
+                to={`/equipment/${qrData.publicId}`}
+                target="_blank"
+                className="text-[#087A35] font-semibold hover:underline flex items-center gap-1"
+              >
+                <ExternalLink className="w-3.5 h-3.5" />
+                View Student Profile
+              </Link>
+            </div>
           </div>
-        </div>
-      )}
+        )}
+      </Modal>
 
-      {/* Edit Equipment Modal */}
-      {showEditModal && selectedItem && (
-        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="bg-[#0f1d38] border border-white/15 rounded-3xl w-full max-w-md p-6 sm:p-7 shadow-2xl relative text-white">
-            <button
-              onClick={() => setShowEditModal(false)}
-              className="absolute top-5 right-5 text-slate-400 hover:text-white cursor-pointer"
-            >
-              <X className="w-5 h-5" />
-            </button>
-
-            <h3 className="font-bold text-lg text-white mb-1">Update Equipment</h3>
-            <p className="text-xs text-slate-400 mb-5">{selectedItem.name}</p>
-
-            <form onSubmit={handleUpdateEquipment} className="space-y-4">
-              <div>
-                <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">
-                  Operational Status (Independent from Calibration)
-                </label>
-                <select
-                  value={editStatus}
-                  onChange={(e) => setEditStatus(e.target.value)}
-                  className="w-full bg-[#081124] border border-white/15 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-cyan-400 transition"
-                >
-                  <option value="Ready to Use" className="bg-slate-900 text-white">Ready to Use</option>
-                  <option value="Under Repair" className="bg-slate-900 text-white">Under Repair</option>
-                  <option value="Damaged" className="bg-slate-900 text-white">Damaged</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">
-                  Location / Bench
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={editLocation}
-                  onChange={(e) => setEditLocation(e.target.value)}
-                  className="w-full bg-[#081124] border border-white/15 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-cyan-400 transition"
-                />
-              </div>
-
-              <div className="pt-3 flex items-center justify-end gap-3">
-                <button
-                  type="button"
-                  onClick={() => setShowEditModal(false)}
-                  className="px-4 py-2 text-xs font-bold text-slate-400 hover:text-white"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-5 py-2.5 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 text-white rounded-xl text-xs font-bold shadow-lg shadow-cyan-500/20 transition cursor-pointer"
-                >
-                  Save Changes
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* QR Code Printable Modal on Same Page */}
-      {showQrModal && (
-        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="bg-[#0f1d38] border border-white/15 rounded-3xl w-full max-w-sm p-6 sm:p-7 text-center shadow-2xl relative text-white">
-            <button
-              onClick={() => { setShowQrModal(false); setQrData(null); }}
-              className="absolute top-5 right-5 text-slate-400 hover:text-white cursor-pointer"
-            >
-              <X className="w-5 h-5" />
-            </button>
-
-            {qrLoading || !qrData ? (
-              <div className="py-12 flex flex-col items-center justify-center gap-3">
-                <Loader2 className="w-8 h-8 text-cyan-400 animate-spin" />
-                <p className="text-xs text-slate-400 font-mono">Generating high-contrast QR code...</p>
-              </div>
-            ) : (
-              <>
-                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-cyan-500/15 border border-cyan-400/30 text-cyan-300 text-[10px] font-bold uppercase tracking-wider mb-2">
-                  <QrCode className="w-3.5 h-3.5 text-cyan-400" />
-                  Physical Instrument QR Label
-                </div>
-
-                <h3 className="font-bold text-base text-white">{qrData.equipmentName}</h3>
-                <p className="text-xs text-slate-400 font-mono mt-0.5">SN: {qrData.serialNumber}</p>
-                <p className="text-xs text-cyan-400 mt-0.5">{qrData.labName} • {qrData.labBlock}</p>
-
-                <div className="my-5 p-4 bg-white rounded-2xl inline-block shadow-2xl border border-white/20">
-                  <img src={qrData.qrCodeDataUrl} alt="Equipment QR Code" className="w-48 h-48 mx-auto object-contain" />
-                </div>
-
-                <p className="text-[11px] text-slate-400 font-mono break-all mb-4">
-                  Public QR ID: <span className="text-cyan-300 font-bold">{qrData.publicId}</span>
-                </p>
-
-                <div className="grid grid-cols-2 gap-2 pt-1">
-                  <button
-                    type="button"
-                    onClick={() => window.print()}
-                    className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 text-white rounded-xl text-xs font-bold shadow-lg cursor-pointer transition"
-                  >
-                    <Printer className="w-4 h-4" />
-                    Print Label
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => handleDownloadQr(qrData.qrCodeDataUrl, qrData.publicId, qrData.equipmentName)}
-                    className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-white/10 hover:bg-white/15 text-white border border-white/15 rounded-xl text-xs font-semibold cursor-pointer transition"
-                  >
-                    <Download className="w-4 h-4 text-cyan-400" />
-                    Download PNG
-                  </button>
-                </div>
-              </>
-            )}
-          </div>
-        </div>
-      )}
     </div>
   );
 };

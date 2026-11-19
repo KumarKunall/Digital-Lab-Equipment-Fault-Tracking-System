@@ -4,7 +4,8 @@
 
 @layer base {
   body {
-    @apply bg-slate-50 text-slate-800 antialiased;
+    @apply bg-[#F7F9F7] text-[#172033] antialiased;
+    font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
   }
 }
 
@@ -14,17 +15,17 @@
   height: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: #f1f5f9;
+  background: #f1f5f2;
 }
 ::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
+  background: #cbd8ce;
   border-radius: 3px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
+  background: #9ab3a1;
 }
 
-/* Printable QR styling */
+/* Printable QR styling - Strict Preservation */
 @media print {
   body * {
     visibility: hidden;
@@ -39,5 +40,7 @@
     width: 100%;
     margin: 0;
     padding: 20px;
+    background: #ffffff !important;
+    color: #000000 !important;
   }
 }

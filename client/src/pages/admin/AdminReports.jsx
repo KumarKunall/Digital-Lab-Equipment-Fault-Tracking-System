@@ -7,15 +7,17 @@ import {
   CheckCircle2,
   AlertOctagon,
   RefreshCw,
-  Sparkles,
   Layers3,
-  LayoutDashboard,
   QrCode,
   Printer,
-  X,
+  Download,
+  CalendarCheck2,
   Loader2
 } from 'lucide-react';
 import { OperationalStatusBadge, CalibrationStatusBadge, TicketStatusBadge } from '../../utils/statusBadges';
+import PageHeader from '../../components/common/PageHeader';
+import Modal from '../../components/common/Modal';
+import EmptyState from '../../components/common/EmptyState';
 
 const AdminReports = () => {
   const [activeTab, setActiveTab] = useState('calibrated'); // 'calibrated' | 'damaged'
@@ -35,8 +37,8 @@ const AdminReports = () => {
         api.get('/reports/calibrated-equipment'),
         api.get('/reports/damaged-equipment')
       ]);
-      setCalibratedData(calRes.data.data);
-      setDamagedData(damRes.data.data);
+      setCalibratedData(calRes.data.data || []);
+      setDamagedData(damRes.data.data || { damagedEquipment: [], activeTickets: [] });
     } catch (err) {
       console.error('Failed to load reports:', err);
     } finally {
@@ -54,7 +56,13 @@ const AdminReports = () => {
     setShowQrModal(true);
     try {
       const res = await api.get(`/equipment/${id}/qr`);
-      setQrData(res.data.data);
+      const d = res.data.data;
+      const qrImg = d.qrDataUrl || d.qrCodeDataUrl;
+      setQrData({
+        ...d,
+        qrCodeDataUrl: qrImg,
+        qrDataUrl: qrImg
+      });
     } catch (err) {
       alert(err.response?.data?.message || 'Failed to generate QR code');
       setShowQrModal(false);
@@ -63,146 +71,155 @@ const AdminReports = () => {
     }
   };
 
-  return (
-    <div className="p-6 sm:p-8 max-w-7xl mx-auto w-full space-y-7">
-      
-      {/* Header Banner */}
-      <div className="relative rounded-3xl p-7 border border-white/10 bg-gradient-to-r from-[#111f38]/90 via-[#0d192e]/90 to-[#0a1426]/90 backdrop-blur-xl shadow-2xl overflow-hidden flex flex-col sm:flex-row sm:items-center justify-between gap-5">
-        <div>
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-400/20 text-cyan-300 text-[11px] font-bold tracking-wider uppercase mb-2">
-            <ShieldCheck className="w-3.5 h-3.5 text-cyan-400" />
-            READ-ONLY AUDIT REPORTS
-          </div>
-          <h2 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
-            Institutional Compliance Reports
-          </h2>
-          <p className="text-xs sm:text-sm text-slate-400 mt-1 max-w-2xl leading-relaxed">
-            Global audit records across all campus laboratories. View calibration ledgers, damage metrics, and verify QR codes.
-          </p>
-        </div>
+  const handleDownloadQr = () => {
+    const src = qrData?.qrCodeDataUrl || qrData?.qrDataUrl;
+    if (!src) return;
+    const link = document.createElement('a');
+    link.href = src;
+    link.download = `QR_${(qrData.equipmentName || 'equipment').replace(/\s+/g, '_')}_${qrData.serialNumber || qrData.publicId}.png`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
-        <div className="flex items-center gap-3 shrink-0 self-start sm:self-auto">
-          <Link
-            to="/admin"
-            className="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-white/10 hover:bg-white/15 text-white text-xs font-semibold border border-white/10 transition"
-          >
-            <LayoutDashboard className="w-3.5 h-3.5 text-cyan-400" />
-            Go to Main Dashboard
-          </Link>
+  return (
+    <div className="p-5 sm:p-8 max-w-7xl mx-auto w-full space-y-7">
+      
+      {/* Header */}
+      <PageHeader
+        badge="Institutional Compliance"
+        badgeIcon={ShieldCheck}
+        title="Audit & Compliance Reports"
+        description="Global read-only audit records across all campus laboratories. Inspect calibration ledgers, damage histories, and verify hardware QR labels."
+        actions={
           <button
+            type="button"
             onClick={fetchReports}
             disabled={loading}
-            className="inline-flex items-center gap-2 px-4 py-2.5 bg-white/[0.06] hover:bg-white/[0.1] border border-white/15 text-white rounded-xl text-xs font-bold transition cursor-pointer"
+            className="inline-flex items-center gap-2 px-4 py-2.5 bg-[#087A35] hover:bg-[#075C2B] text-white rounded-xl text-xs font-bold transition shadow-sm cursor-pointer disabled:opacity-50"
           >
-            <RefreshCw className={`w-3.5 h-3.5 text-cyan-400 ${loading ? 'animate-spin' : ''}`} />
+            <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
             Refresh Ledger
           </button>
-        </div>
-      </div>
+        }
+      />
 
-      {/* Tabs */}
-      <div className="flex border-b border-white/10 gap-3">
+      {/* Tab Switcher */}
+      <div className="flex items-center gap-2 p-1.5 bg-white rounded-2xl border border-[#E5EBE6] shadow-sm max-w-md">
         <button
+          type="button"
           onClick={() => setActiveTab('calibrated')}
-          className={`pb-3.5 text-xs font-bold transition border-b-2 flex items-center gap-2 px-2 cursor-pointer ${
+          className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-bold transition cursor-pointer ${
             activeTab === 'calibrated'
-              ? 'border-cyan-400 text-cyan-300'
-              : 'border-transparent text-slate-400 hover:text-slate-200'
+              ? 'bg-[#EAF5ED] text-[#087A35] border border-[#BDE3CA] shadow-sm'
+              : 'text-[#647067] hover:text-[#172033]'
           }`}
         >
-          <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-          <span>Calibrated Instruments ({calibratedData.length})</span>
+          <CalendarCheck2 className="w-4 h-4" />
+          Calibrated Equipment Ledger ({calibratedData.length})
         </button>
 
         <button
+          type="button"
           onClick={() => setActiveTab('damaged')}
-          className={`pb-3.5 text-xs font-bold transition border-b-2 flex items-center gap-2 px-2 cursor-pointer ${
+          className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-bold transition cursor-pointer ${
             activeTab === 'damaged'
-              ? 'border-rose-400 text-rose-300'
-              : 'border-transparent text-slate-400 hover:text-slate-200'
+              ? 'bg-red-50 text-red-700 border border-red-200 shadow-sm'
+              : 'text-[#647067] hover:text-[#172033]'
           }`}
         >
-          <AlertOctagon className="w-4 h-4 text-rose-400" />
-          <span>Damaged & Repair Ledger ({damagedData.damagedEquipment?.length || 0})</span>
+          <AlertOctagon className="w-4 h-4" />
+          Damaged & Tickets ({damagedData.damagedEquipment?.length || 0})
         </button>
       </div>
 
-      {/* Tab Panels */}
-      {activeTab === 'calibrated' ? (
-        <div className="rounded-3xl border border-white/10 bg-[#0d182e]/80 backdrop-blur-xl shadow-2xl overflow-hidden">
-          <div className="p-5 border-b border-white/10 flex items-center justify-between">
-            <h3 className="font-bold text-white text-sm flex items-center gap-2">
-              <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-              Verified Calibrated Equipment
-            </h3>
-            <span className="text-xs text-slate-400 font-mono">
-              Total Instruments: {calibratedData.length}
-            </span>
+      {/* ── Table: Calibrated Equipment Ledger ───────────────────────────── */}
+      {activeTab === 'calibrated' && (
+        <div className="rounded-3xl border border-[#E5EBE6] bg-white shadow-sm overflow-hidden">
+          <div className="p-6 border-b border-[#E5EBE6]">
+            <h3 className="text-base font-extrabold text-[#172033]">Calibration Health & Ledgers</h3>
+            <p className="text-xs text-[#647067] mt-0.5">
+              Instruments requiring mandatory periodic testing to uphold university laboratory precision standards.
+            </p>
           </div>
+
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
-              <thead className="bg-white/[0.03] text-slate-400 font-bold border-b border-white/10 uppercase tracking-wider text-[11px]">
+              <thead className="bg-[#F7F9F7] text-[#647067] font-bold border-b border-[#E5EBE6] uppercase tracking-wider text-[11px]">
                 <tr>
                   <th className="px-6 py-4">Equipment Details</th>
-                  <th className="px-6 py-4">Laboratory Department</th>
-                  <th className="px-6 py-4">Bench Location</th>
-                  <th className="px-6 py-4">Calibration Status</th>
-                  <th className="px-6 py-4">Last Verified</th>
+                  <th className="px-6 py-4">Laboratory</th>
+                  <th className="px-6 py-4">Location</th>
+                  <th className="px-6 py-4">Last Calibrated</th>
                   <th className="px-6 py-4">Next Due Date</th>
+                  <th className="px-6 py-4">Calibration Health</th>
                   <th className="px-6 py-4 text-right">QR Code</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-white/[0.06]">
-                {calibratedData.length > 0 ? (
-                  calibratedData.map((eq) => (
-                    <tr key={eq._id} className="hover:bg-white/[0.03] transition-colors">
+              <tbody className="divide-y divide-[#E5EBE6]">
+                {loading ? (
+                  <tr>
+                    <td colSpan="7" className="px-6 py-12 text-center text-[#647067]">
+                      <Loader2 className="w-6 h-6 animate-spin mx-auto text-[#087A35] mb-2" />
+                      Loading calibration records...
+                    </td>
+                  </tr>
+                ) : calibratedData.length > 0 ? (
+                  calibratedData.map((item) => (
+                    <tr key={item._id} className="hover:bg-[#F7F9F7]/60 transition-colors">
                       <td className="px-6 py-4">
-                        <span className="font-bold text-white block text-sm">{eq.name}</span>
-                        <span className="font-mono text-[11px] text-slate-400">
-                          SN: {eq.serialNumber} {eq.model ? `• ${eq.model}` : ''}
+                        <span className="font-bold text-[#172033] block text-sm">{item.name}</span>
+                        <span className="font-mono text-[11px] text-[#647067]">
+                          SN: {item.serialNumber} {item.model ? `• ${item.model}` : ''}
                         </span>
                       </td>
+
                       <td className="px-6 py-4">
-                        <span className="font-semibold text-cyan-300">{eq.labId?.labName}</span>
-                        <span className="text-[11px] text-slate-400 block font-mono">
-                          {eq.labId?.labBlock} ({eq.labId?.labId})
-                        </span>
+                        <span className="text-[#172033] font-medium block">{item.labId?.labName}</span>
+                        <span className="text-[10px] text-[#647067] font-mono">({item.labId?.labId})</span>
                       </td>
-                      <td className="px-6 py-4 text-slate-300">{eq.location}</td>
+
+                      <td className="px-6 py-4 text-[#172033]">{item.location}</td>
+
+                      <td className="px-6 py-4 font-mono text-[#647067]">
+                        {item.lastCalibrationDate
+                          ? new Date(item.lastCalibrationDate).toLocaleDateString()
+                          : 'Not recorded'}
+                      </td>
+
+                      <td className="px-6 py-4 font-mono font-bold text-[#172033]">
+                        {item.nextCalibrationDate
+                          ? new Date(item.nextCalibrationDate).toLocaleDateString()
+                          : 'N/A'}
+                      </td>
+
                       <td className="px-6 py-4">
-                        {eq.nextCalibrationDate ? (
-                          <CalibrationStatusBadge
-                            status={eq.calibrationHealth?.status}
-                            daysRemaining={eq.calibrationHealth?.daysRemaining}
-                          />
-                        ) : (
-                          <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-slate-800 text-slate-400 border border-white/10">
-                            Non-Calibrated
-                          </span>
-                        )}
+                        <CalibrationStatusBadge
+                          status={item.calibrationHealth?.status}
+                          daysRemaining={item.calibrationHealth?.daysRemaining}
+                        />
                       </td>
-                      <td className="px-6 py-4 font-mono text-slate-300">
-                        {eq.lastCalibrationDate ? new Date(eq.lastCalibrationDate).toLocaleDateString() : '—'}
-                      </td>
-                      <td className="px-6 py-4 font-mono font-bold text-white">
-                        {eq.nextCalibrationDate ? new Date(eq.nextCalibrationDate).toLocaleDateString() : 'N/A'}
-                      </td>
+
                       <td className="px-6 py-4 text-right">
                         <button
-                          onClick={() => handleOpenQr(eq._id)}
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-cyan-500/15 hover:bg-cyan-500/25 border border-cyan-400/30 text-cyan-300 text-xs font-semibold transition cursor-pointer"
-                          title="View / Print QR Code"
+                          type="button"
+                          onClick={() => handleOpenQr(item._id)}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#EAF5ED] hover:bg-[#DDF2E3] border border-[#BDE3CA] text-[#087A35] text-xs font-bold transition cursor-pointer"
                         >
                           <QrCode className="w-3.5 h-3.5" />
-                          View QR
+                          QR Code
                         </button>
                       </td>
                     </tr>
                   ))
                 ) : (
                   <tr>
-                    <td colSpan="7" className="px-6 py-10 text-center text-slate-400">
-                      No calibrated equipment found.
+                    <td colSpan="7">
+                      <EmptyState
+                        icon={CalendarCheck2}
+                        title="No calibration records found"
+                        description="There are currently no instruments flagged for calibration."
+                      />
                     </td>
                   </tr>
                 )}
@@ -210,124 +227,168 @@ const AdminReports = () => {
             </table>
           </div>
         </div>
-      ) : (
-        /* Damaged Equipment Table */
-        <div className="space-y-6">
-          <div className="rounded-3xl border border-white/10 bg-[#0d182e]/80 backdrop-blur-xl shadow-2xl overflow-hidden">
-            <div className="p-5 border-b border-white/10 flex items-center justify-between">
-              <h3 className="font-bold text-white text-sm flex items-center gap-2">
-                <AlertOctagon className="w-4 h-4 text-rose-400" />
-                Damaged Hardware List
-              </h3>
-              <span className="text-xs text-slate-400 font-mono">
-                Sorted by Lifetime Damage Count (Descending)
-              </span>
-            </div>
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs">
-                <thead className="bg-white/[0.03] text-slate-400 font-bold border-b border-white/10 uppercase tracking-wider text-[11px]">
+      )}
+
+      {/* ── Table: Damaged Instruments & Active Tickets ─────────────────── */}
+      {activeTab === 'damaged' && (
+        <div className="rounded-3xl border border-[#E5EBE6] bg-white shadow-sm overflow-hidden">
+          <div className="p-6 border-b border-[#E5EBE6]">
+            <h3 className="text-base font-extrabold text-[#172033]">Damaged Instruments & Fault Queue</h3>
+            <p className="text-xs text-[#647067] mt-0.5">
+              Comprehensive overview of instruments flagged as damaged or currently undergoing repair.
+            </p>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs">
+              <thead className="bg-[#F7F9F7] text-[#647067] font-bold border-b border-[#E5EBE6] uppercase tracking-wider text-[11px]">
+                <tr>
+                  <th className="px-6 py-4">Instrument Details</th>
+                  <th className="px-6 py-4">Laboratory</th>
+                  <th className="px-6 py-4">Operational Status</th>
+                  <th className="px-6 py-4 text-center">Damage Count</th>
+                  <th className="px-6 py-4">Latest Ticket Details</th>
+                  <th className="px-6 py-4 text-right">QR Code</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-[#E5EBE6]">
+                {loading ? (
                   <tr>
-                    <th className="px-6 py-4">Equipment Details</th>
-                    <th className="px-6 py-4">Laboratory</th>
-                    <th className="px-6 py-4">Bench Location</th>
-                    <th className="px-6 py-4">Operational Status</th>
-                    <th className="px-6 py-4 text-center">Damage Count</th>
-                    <th className="px-6 py-4 text-right">QR Code</th>
+                    <td colSpan="6" className="px-6 py-12 text-center text-[#647067]">
+                      <Loader2 className="w-6 h-6 animate-spin mx-auto text-[#087A35] mb-2" />
+                      Loading damaged equipment records...
+                    </td>
                   </tr>
-                </thead>
-                <tbody className="divide-y divide-white/[0.06]">
-                  {damagedData.damagedEquipment?.length > 0 ? (
-                    damagedData.damagedEquipment.map((eq) => (
-                      <tr key={eq._id} className="hover:bg-white/[0.03] transition-colors">
+                ) : damagedData.damagedEquipment && damagedData.damagedEquipment.length > 0 ? (
+                  damagedData.damagedEquipment.map((eq) => {
+                    const activeTicket = damagedData.activeTickets?.find(
+                      (t) => t.equipmentId?._id === eq._id || t.equipmentId === eq._id
+                    );
+
+                    return (
+                      <tr key={eq._id} className="hover:bg-[#F7F9F7]/60 transition-colors">
                         <td className="px-6 py-4">
-                          <span className="font-bold text-white block text-sm">{eq.name}</span>
-                          <span className="font-mono text-[11px] text-slate-400">
+                          <span className="font-bold text-[#172033] block text-sm">{eq.name}</span>
+                          <span className="font-mono text-[11px] text-[#647067]">
                             SN: {eq.serialNumber} {eq.model ? `• ${eq.model}` : ''}
                           </span>
                         </td>
+
                         <td className="px-6 py-4">
-                          <span className="font-semibold text-cyan-300">{eq.labId?.labName}</span>
-                          <span className="text-[11px] text-slate-400 block font-mono">
-                            {eq.labId?.labBlock} ({eq.labId?.labId})
-                          </span>
+                          <span className="text-[#172033] font-medium block">{eq.labId?.labName}</span>
+                          <span className="text-[10px] text-[#647067] font-mono">({eq.labId?.labId})</span>
                         </td>
-                        <td className="px-6 py-4 text-slate-300">{eq.location}</td>
+
                         <td className="px-6 py-4">
                           <OperationalStatusBadge status={eq.operationalStatus} />
                         </td>
-                        <td className="px-6 py-4 text-center font-mono font-bold text-rose-400">
-                          <span className="px-2.5 py-1 rounded-lg bg-rose-500/15 border border-rose-500/30">
-                            {eq.damageCount}
+
+                        <td className="px-6 py-4 text-center">
+                          <span className="inline-block px-3 py-1 rounded-full bg-red-50 border border-red-200 text-red-700 font-bold font-mono text-xs">
+                            {eq.damageCount} faults
                           </span>
                         </td>
+
+                        <td className="px-6 py-4 max-w-xs">
+                          {activeTicket ? (
+                            <div className="space-y-1">
+                              <div className="flex items-center gap-1.5">
+                                <span className="font-mono font-bold text-[#087A35] text-[11px]">
+                                  {activeTicket.ticketId}
+                                </span>
+                                <TicketStatusBadge status={activeTicket.ticketStatus} />
+                              </div>
+                              <p className="text-[11px] text-[#647067] truncate">
+                                {activeTicket.description}
+                              </p>
+                            </div>
+                          ) : (
+                            <span className="text-slate-400 italic">No active open ticket</span>
+                          )}
+                        </td>
+
                         <td className="px-6 py-4 text-right">
                           <button
+                            type="button"
                             onClick={() => handleOpenQr(eq._id)}
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-cyan-500/15 hover:bg-cyan-500/25 border border-cyan-400/30 text-cyan-300 text-xs font-semibold transition cursor-pointer"
-                            title="View / Print QR Code"
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#EAF5ED] hover:bg-[#DDF2E3] border border-[#BDE3CA] text-[#087A35] text-xs font-bold transition cursor-pointer"
                           >
                             <QrCode className="w-3.5 h-3.5" />
-                            View QR
+                            QR Code
                           </button>
                         </td>
                       </tr>
-                    ))
-                  ) : (
-                    <tr>
-                      <td colSpan="6" className="px-6 py-10 text-center text-slate-400">
-                        No damaged equipment currently reported across university labs.
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
+                    );
+                  })
+                ) : (
+                  <tr>
+                    <td colSpan="6">
+                      <EmptyState
+                        icon={AlertOctagon}
+                        title="No damaged instruments"
+                        description="All laboratory equipment is currently operational and in good standing."
+                      />
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* QR Code Printable Modal */}
+      <Modal
+        isOpen={showQrModal}
+        onClose={() => {
+          setShowQrModal(false);
+          setQrData(null);
+        }}
+        title="Equipment Identification QR Code"
+        subtitle="Institutional equipment identification sticker"
+        maxWidth="max-w-sm"
+      >
+        {qrLoading || !qrData ? (
+          <div className="py-12 flex flex-col items-center justify-center gap-3">
+            <Loader2 className="w-8 h-8 text-[#087A35] animate-spin" />
+            <p className="text-xs text-[#647067] font-mono">Generating QR code...</p>
+          </div>
+        ) : (
+          <div className="text-center">
+            <h4 className="font-extrabold text-base text-[#172033]">{qrData.equipmentName}</h4>
+            <p className="text-xs text-[#647067] font-mono mt-0.5">SN: {qrData.serialNumber}</p>
+            <p className="text-xs text-[#087A35] font-bold mt-0.5">{qrData.labName} • {qrData.labBlock}</p>
+
+            <div className="my-5 p-4 bg-white border border-[#E5EBE6] rounded-2xl inline-block shadow-sm">
+              <img src={qrData.qrCodeDataUrl || qrData.qrDataUrl} alt="Equipment QR Code" className="w-44 h-44 mx-auto" />
+            </div>
+
+            <p className="text-[11px] text-[#647067] font-mono break-all mb-5">
+              Public QR ID: <span className="text-[#087A35] font-bold">{qrData.publicId}</span>
+            </p>
+
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => window.print()}
+                className="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 bg-[#087A35] hover:bg-[#075C2B] text-white rounded-xl text-xs font-bold transition shadow-sm cursor-pointer"
+              >
+                <Printer className="w-4 h-4" />
+                Print Sticker
+              </button>
+              <button
+                type="button"
+                onClick={handleDownloadQr}
+                className="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 bg-[#EAF5ED] hover:bg-[#DDF2E3] text-[#087A35] border border-[#BDE3CA] rounded-xl text-xs font-bold transition cursor-pointer"
+              >
+                <Download className="w-4 h-4" />
+                Download PNG
+              </button>
             </div>
           </div>
-        </div>
-      )}
+        )}
+      </Modal>
 
-      {/* QR Code Printable Modal for Admin */}
-      {showQrModal && (
-        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="bg-[#0f1d38] border border-white/15 rounded-3xl w-full max-w-sm p-6 text-center shadow-2xl relative text-white">
-            <button
-              onClick={() => { setShowQrModal(false); setQrData(null); }}
-              className="absolute top-5 right-5 text-slate-400 hover:text-white cursor-pointer"
-            >
-              <X className="w-5 h-5" />
-            </button>
-
-            {qrLoading || !qrData ? (
-              <div className="py-12 flex flex-col items-center justify-center gap-3">
-                <Loader2 className="w-8 h-8 text-cyan-400 animate-spin" />
-                <p className="text-xs text-slate-400 font-mono">Generating high-contrast QR code...</p>
-              </div>
-            ) : (
-              <>
-                <h3 className="font-bold text-base text-white">{qrData.equipmentName}</h3>
-                <p className="text-xs text-slate-400 font-mono mt-0.5">SN: {qrData.serialNumber}</p>
-                <p className="text-xs text-cyan-400 mt-0.5">{qrData.labName} • {qrData.labBlock}</p>
-
-                <div className="my-5 p-4 bg-white rounded-2xl inline-block shadow-xl">
-                  <img src={qrData.qrCodeDataUrl} alt="Equipment QR Code" className="w-48 h-48 mx-auto" />
-                </div>
-
-                <p className="text-[11px] text-slate-400 font-mono break-all mb-4">
-                  Public QR ID: <span className="text-cyan-300 font-bold">{qrData.publicId}</span>
-                </p>
-
-                <button
-                  onClick={() => window.print()}
-                  className="inline-flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 text-white rounded-xl text-xs font-bold shadow-lg cursor-pointer transition"
-                >
-                  <Printer className="w-4 h-4" />
-                  Print QR Label
-                </button>
-              </>
-            )}
-          </div>
-        </div>
-      )}
     </div>
   );
 };

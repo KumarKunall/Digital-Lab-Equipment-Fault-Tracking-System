@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useSearchParams, useNavigate, Link } from 'react-router-dom';
 import api from '../../services/api';
-import { KeyRound, CheckCircle2, AlertCircle } from 'lucide-react';
+import { KeyRound, CheckCircle2, AlertCircle, ArrowLeft, Loader2 } from 'lucide-react';
 
 const SetupPasswordPage = () => {
   const [searchParams] = useSearchParams();
@@ -43,73 +43,97 @@ const SetupPasswordPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-900 flex items-center justify-center px-4">
-      <div className="w-full max-w-md bg-slate-800 border border-slate-700 rounded-2xl p-8 shadow-2xl">
+    <div className="min-h-screen bg-[#F7F9F7] text-[#172033] flex flex-col justify-between py-10 px-4">
+      
+      <div className="max-w-md mx-auto w-full mb-4">
+        <Link
+          to="/"
+          className="inline-flex items-center gap-2 text-xs font-bold text-[#647067] hover:text-[#087A35] transition"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          Back to Home
+        </Link>
+      </div>
+
+      <div className="w-full max-w-md mx-auto bg-white border border-[#E5EBE6] rounded-3xl p-7 sm:p-8 shadow-sm">
+        
         <div className="text-center mb-6">
-          <div className="w-12 h-12 rounded-xl bg-blue-600 mx-auto flex items-center justify-center text-white mb-3 shadow-lg shadow-blue-500/20">
+          <Link to="/" className="inline-block mb-4">
+            <img src="/labequip-logo.svg" alt="LabEquip" className="h-10 w-auto mx-auto object-contain" />
+          </Link>
+          <div className="w-12 h-12 rounded-2xl bg-[#EAF5ED] text-[#087A35] border border-[#BDE3CA] mx-auto flex items-center justify-center mb-3">
             <KeyRound className="w-6 h-6" />
           </div>
-          <h2 className="text-2xl font-bold text-white">Set Your Password</h2>
-          <p className="text-xs text-slate-400 mt-1">
-            Welcome to the Laboratory Tracking System. Set a secure password to activate your account.
+          <h2 className="text-xl font-extrabold text-[#172033] tracking-tight">Set Your Password</h2>
+          <p className="text-xs text-[#647067] mt-1 leading-relaxed">
+            Welcome to LabEquip. Please establish a secure password to activate your staff account.
           </p>
         </div>
 
         {success ? (
-          <div className="p-4 rounded-xl bg-emerald-950/60 border border-emerald-800 text-center text-emerald-300 text-sm">
-            <CheckCircle2 className="w-8 h-8 text-emerald-400 mx-auto mb-2" />
-            <p className="font-semibold">Password set successfully!</p>
-            <p className="text-xs text-slate-400 mt-1">Redirecting you to the sign in page...</p>
+          <div className="p-5 rounded-2xl bg-[#EAF5ED] border border-[#BDE3CA] text-center text-[#087A35] text-xs">
+            <CheckCircle2 className="w-10 h-10 text-[#087A35] mx-auto mb-2" />
+            <p className="font-bold text-sm">Password set successfully!</p>
+            <p className="text-xs text-[#647067] mt-1">Redirecting you to the sign in page...</p>
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-4">
             {error && (
-              <div className="p-3 rounded-lg bg-rose-950/60 border border-rose-800 text-rose-300 text-xs flex items-center gap-2">
+              <div className="p-3.5 rounded-2xl bg-red-50 border border-red-200 text-red-700 text-xs flex items-center gap-2">
                 <AlertCircle className="w-4 h-4 shrink-0" />
                 <span>{error}</span>
               </div>
             )}
 
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1.5">New Password</label>
+              <label className="block text-xs font-bold text-[#172033] uppercase tracking-wider mb-1.5">
+                New Password
+              </label>
               <input
                 type="password"
                 required
                 placeholder="At least 6 characters"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-blue-500"
+                className="w-full bg-[#F7F9F7] border border-[#E5EBE6] rounded-xl px-4 py-2.5 text-sm text-[#172033] focus:outline-none focus:border-[#087A35] focus:bg-white transition"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1.5">Confirm Password</label>
+              <label className="block text-xs font-bold text-[#172033] uppercase tracking-wider mb-1.5">
+                Confirm Password
+              </label>
               <input
                 type="password"
                 required
                 placeholder="Re-enter password"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
-                className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-blue-500"
+                className="w-full bg-[#F7F9F7] border border-[#E5EBE6] rounded-xl px-4 py-2.5 text-sm text-[#172033] focus:outline-none focus:border-[#087A35] focus:bg-white transition"
               />
             </div>
 
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-blue-600 hover:bg-blue-500 text-white font-semibold py-2.5 rounded-lg text-sm transition shadow-md shadow-blue-600/30 disabled:opacity-50"
+              className="w-full bg-[#087A35] hover:bg-[#075C2B] text-white font-bold py-3 rounded-xl text-xs sm:text-sm transition shadow-sm disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer mt-2"
             >
-              {loading ? 'Setting Password...' : 'Save & Activate Account'}
+              {loading ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Activating Account...
+                </>
+              ) : (
+                'Set Password & Activate'
+              )}
             </button>
-
-            <div className="text-center pt-2">
-              <Link to="/login" className="text-xs text-slate-400 hover:text-white transition">
-                Back to Sign In
-              </Link>
-            </div>
           </form>
         )}
       </div>
+
+      <footer className="text-center text-[11px] text-[#647067] py-4">
+        Local Lab Equipment Calibration & Fault Tracking System • LabEquip
+      </footer>
     </div>
   );
 };

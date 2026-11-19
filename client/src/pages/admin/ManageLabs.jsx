@@ -8,11 +8,13 @@ import {
   RotateCcw,
   CheckCircle2,
   AlertCircle,
-  X,
-  Sparkles,
-  LayoutDashboard,
-  Search
+  Search,
+  Loader2,
+  ArrowLeft
 } from 'lucide-react';
+import PageHeader from '../../components/common/PageHeader';
+import Modal from '../../components/common/Modal';
+import EmptyState from '../../components/common/EmptyState';
 
 const ManageLabs = () => {
   const [labs, setLabs] = useState([]);
@@ -81,7 +83,7 @@ const ManageLabs = () => {
     }
   };
 
-  // Restore / Unarchive Laboratory (Requirement 3.B)
+  // Restore / Unarchive Laboratory
   const handleRestoreLab = async (id, name) => {
     try {
       await api.patch(`/labs/${id}/reactivate`);
@@ -99,148 +101,126 @@ const ManageLabs = () => {
       l.labId.toLowerCase().includes(search.toLowerCase()) ||
       l.labBlock.toLowerCase().includes(search.toLowerCase());
 
-    if (statusFilter === 'ALL') return matchesSearch;
     if (statusFilter === 'ACTIVE') return matchesSearch && l.isActive;
     if (statusFilter === 'ARCHIVED') return matchesSearch && !l.isActive;
     return matchesSearch;
   });
 
-  // Archive lab sabse niche aaye (Active labs on top, Archived labs strictly at the bottom)
-  const sortedLabs = [...filteredLabs].sort((a, b) => {
-    if (a.isActive === b.isActive) {
-      return a.labName.localeCompare(b.labName);
-    }
-    return a.isActive ? -1 : 1;
-  });
-
-  const activeCount = labs.filter((l) => l.isActive).length;
-  const archivedCount = labs.filter((l) => !l.isActive).length;
-
   return (
-    <div className="p-6 sm:p-8 max-w-7xl mx-auto w-full space-y-7">
+    <div className="p-5 sm:p-8 max-w-7xl mx-auto w-full space-y-7">
       
-      {/* Header Banner */}
-      <div className="relative rounded-3xl p-7 border border-white/10 bg-gradient-to-r from-[#111f38]/90 via-[#0d192e]/90 to-[#0a1426]/90 backdrop-blur-xl shadow-2xl overflow-hidden flex flex-col sm:flex-row sm:items-center justify-between gap-5">
-        <div>
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-400/20 text-cyan-300 text-[11px] font-bold tracking-wider uppercase mb-2">
-            <Building2 className="w-3.5 h-3.5 text-cyan-400" />
-            LABORATORY REGISTRY
-          </div>
-          <h2 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
-            Laboratories Directory
-          </h2>
-          <p className="text-xs sm:text-sm text-slate-400 mt-1 max-w-2xl leading-relaxed">
-            Create and maintain physical laboratory departments. Safely archive and restore labs anytime with full data preservation.
-          </p>
-        </div>
-
-        <div className="flex items-center gap-3 shrink-0 self-start sm:self-auto">
-          <Link
-            to="/admin"
-            className="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-white/10 hover:bg-white/15 text-white text-xs font-semibold border border-white/10 transition"
-          >
-            <LayoutDashboard className="w-3.5 h-3.5 text-cyan-400" />
-            Go to Main Dashboard
-          </Link>
+      {/* Header */}
+      <PageHeader
+        badge="Facilities & Laboratories"
+        badgeIcon={Building2}
+        title="Manage Laboratories"
+        description="Register campus facilities, maintain building/block designations, archive inactive labs and view facility status."
+        actions={
           <button
-            onClick={() => setShowAddModal(true)}
-            className="inline-flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 text-white rounded-xl text-xs font-bold shadow-lg shadow-cyan-500/20 transition-all transform hover:-translate-y-0.5 cursor-pointer"
+            type="button"
+            onClick={() => {
+              setError('');
+              setShowAddModal(true);
+            }}
+            className="inline-flex items-center gap-2 px-4 py-2.5 bg-[#087A35] hover:bg-[#075C2B] text-white rounded-xl text-xs font-bold transition shadow-sm cursor-pointer"
           >
             <Plus className="w-4 h-4" />
-            Add New Laboratory
+            Add Laboratory
           </button>
-        </div>
-      </div>
+        }
+      />
 
+      {/* Success banner */}
       {successMsg && (
-        <div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs flex items-center gap-2.5">
-          <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-400" />
+        <div className="p-4 rounded-2xl bg-[#EAF5ED] border border-[#BDE3CA] text-[#087A35] text-xs font-semibold flex items-center gap-2.5 animate-in fade-in">
+          <CheckCircle2 className="w-4 h-4 text-[#087A35] shrink-0" />
           <span>{successMsg}</span>
         </div>
       )}
 
-      {/* Filter Tabs and Search Bar */}
-      <div className="rounded-2xl p-4 border border-white/10 bg-[#0d182e]/80 backdrop-blur-xl flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      {/* Search and Filters Bar */}
+      <div className="bg-white border border-[#E5EBE6] rounded-2xl p-4 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4">
+        
         {/* Search */}
-        <div className="relative w-full max-w-md">
-          <Search className="w-4 h-4 text-cyan-400 absolute left-3.5 top-3" />
+        <div className="relative w-full sm:w-80">
           <input
             type="text"
-            placeholder="Search by lab name, code, or building block..."
+            placeholder="Search by lab name, code, or block..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full bg-[#081124] border border-white/15 rounded-xl pl-10 pr-4 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400 transition"
+            className="w-full bg-[#F7F9F7] border border-[#E5EBE6] rounded-xl pl-9 pr-4 py-2 text-xs text-[#172033] placeholder-[#647067] focus:outline-none focus:border-[#087A35] focus:bg-white transition"
           />
+          <Search className="w-4 h-4 text-[#647067] absolute left-3 top-2.5" />
         </div>
 
-        {/* Filter Tabs (All / Active / Archived) */}
-        <div className="flex items-center gap-2 text-xs font-semibold">
-          <button
-            onClick={() => setStatusFilter('ALL')}
-            className={`px-3 py-1.5 rounded-lg transition cursor-pointer ${
-              statusFilter === 'ALL'
-                ? 'bg-blue-600 text-white shadow-sm'
-                : 'bg-white/[0.04] text-slate-400 hover:text-white'
-            }`}
-          >
-            All Labs ({labs.length})
-          </button>
-          <button
-            onClick={() => setStatusFilter('ACTIVE')}
-            className={`px-3 py-1.5 rounded-lg transition cursor-pointer ${
-              statusFilter === 'ACTIVE'
-                ? 'bg-emerald-600 text-white shadow-sm'
-                : 'bg-white/[0.04] text-slate-400 hover:text-white'
-            }`}
-          >
-            Active ({activeCount})
-          </button>
-          <button
-            onClick={() => setStatusFilter('ARCHIVED')}
-            className={`px-3 py-1.5 rounded-lg transition cursor-pointer ${
-              statusFilter === 'ARCHIVED'
-                ? 'bg-amber-600 text-white shadow-sm'
-                : 'bg-white/[0.04] text-slate-400 hover:text-white'
-            }`}
-          >
-            Archived ({archivedCount})
-          </button>
+        {/* Status Filter Pills */}
+        <div className="flex items-center gap-1.5 p-1 bg-[#F7F9F7] rounded-xl border border-[#E5EBE6] text-xs font-semibold self-stretch sm:self-auto">
+          {['ALL', 'ACTIVE', 'ARCHIVED'].map((filter) => (
+            <button
+              key={filter}
+              type="button"
+              onClick={() => setStatusFilter(filter)}
+              className={`px-3 py-1.5 rounded-lg transition cursor-pointer ${
+                statusFilter === filter
+                  ? 'bg-white text-[#087A35] font-bold shadow-sm border border-[#BDE3CA]'
+                  : 'text-[#647067] hover:text-[#172033]'
+              }`}
+            >
+              {filter.charAt(0) + filter.slice(1).toLowerCase()}
+            </button>
+          ))}
         </div>
       </div>
 
-      {/* Labs Table */}
-      <div className="rounded-3xl border border-white/10 bg-[#0d182e]/80 backdrop-blur-xl shadow-2xl overflow-hidden">
+      {/* Laboratories Table */}
+      <div className="rounded-3xl border border-[#E5EBE6] bg-white shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
-            <thead className="bg-white/[0.03] text-slate-400 font-bold border-b border-white/10 uppercase tracking-wider text-[11px]">
+            <thead className="bg-[#F7F9F7] text-[#647067] font-bold border-b border-[#E5EBE6] uppercase tracking-wider text-[11px]">
               <tr>
-                <th className="px-6 py-4">Lab ID (Auto-Generated)</th>
                 <th className="px-6 py-4">Laboratory Name</th>
-                <th className="px-6 py-4">Block / Building</th>
-                <th className="px-6 py-4">Active Equipment</th>
+                <th className="px-6 py-4">Unique Code</th>
+                <th className="px-6 py-4">Location / Block</th>
                 <th className="px-6 py-4">Status</th>
                 <th className="px-6 py-4 text-right">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-white/[0.06]">
-              {sortedLabs.length > 0 ? (
-                sortedLabs.map((lab) => (
-                  <tr key={lab._id} className="hover:bg-white/[0.03] transition-colors">
-                    <td className="px-6 py-4 font-mono font-bold text-cyan-400 text-sm">{lab.labId}</td>
-                    <td className="px-6 py-4 font-bold text-white text-sm">{lab.labName}</td>
-                    <td className="px-6 py-4 text-slate-300">{lab.labBlock}</td>
-                    <td className="px-6 py-4 font-mono text-slate-300">
-                      {lab.equipmentCount !== undefined ? lab.equipmentCount : '—'}
+            <tbody className="divide-y divide-[#E5EBE6]">
+              {loading ? (
+                <tr>
+                  <td colSpan="5" className="px-6 py-12 text-center text-[#647067]">
+                    <Loader2 className="w-6 h-6 animate-spin mx-auto text-[#087A35] mb-2" />
+                    Loading laboratories...
+                  </td>
+                </tr>
+              ) : filteredLabs.length > 0 ? (
+                filteredLabs.map((lab) => (
+                  <tr key={lab._id} className="hover:bg-[#F7F9F7]/60 transition-colors">
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-9 h-9 rounded-xl bg-[#EAF5ED] text-[#087A35] border border-[#BDE3CA] flex items-center justify-center shrink-0 font-bold">
+                          <Building2 className="w-4 h-4" />
+                        </div>
+                        <div>
+                          <span className="font-bold text-[#172033] block text-sm">{lab.labName}</span>
+                          <span className="text-[11px] text-[#647067]">Campus Facility</span>
+                        </div>
+                      </div>
                     </td>
                     <td className="px-6 py-4">
+                      <span className="font-mono text-xs font-bold text-[#087A35] bg-[#EAF5ED] px-2.5 py-1 rounded-md border border-[#BDE3CA]">
+                        {lab.labId}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 text-[#172033] font-medium">{lab.labBlock}</td>
+                    <td className="px-6 py-4">
                       {lab.isActive ? (
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
-                          <CheckCircle2 className="w-3.5 h-3.5" />
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-[#EAF5ED] text-[#087A35] border border-[#BDE3CA]">
+                          <span className="w-1.5 h-1.5 rounded-full bg-[#087A35]" />
                           Active
                         </span>
                       ) : (
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-amber-500/10 text-amber-400 border border-amber-500/30">
-                          <Archive className="w-3.5 h-3.5" />
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-600 border border-slate-200">
                           Archived
                         </span>
                       )}
@@ -248,19 +228,21 @@ const ManageLabs = () => {
                     <td className="px-6 py-4 text-right">
                       {lab.isActive ? (
                         <button
+                          type="button"
                           onClick={() => handleArchiveLab(lab._id, lab.labName)}
-                          className="inline-flex items-center gap-1.5 text-xs font-semibold text-rose-300 hover:text-white bg-rose-500/15 hover:bg-rose-500/25 border border-rose-500/30 px-3 py-1.5 rounded-lg transition cursor-pointer"
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-red-700 bg-red-50 hover:bg-red-100 border border-red-200 text-xs font-semibold transition cursor-pointer"
                         >
                           <Archive className="w-3.5 h-3.5" />
                           Archive
                         </button>
                       ) : (
                         <button
+                          type="button"
                           onClick={() => handleRestoreLab(lab._id, lab.labName)}
-                          className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-300 hover:text-white bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/30 px-3 py-1.5 rounded-lg transition cursor-pointer"
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[#087A35] bg-[#EAF5ED] hover:bg-[#DDF2E3] border border-[#BDE3CA] text-xs font-semibold transition cursor-pointer"
                         >
                           <RotateCcw className="w-3.5 h-3.5" />
-                          Restore Lab
+                          Restore
                         </button>
                       )}
                     </td>
@@ -268,8 +250,12 @@ const ManageLabs = () => {
                 ))
               ) : (
                 <tr>
-                  <td colSpan="6" className="px-6 py-10 text-center text-slate-400">
-                    No laboratories found. Click "Add New Laboratory" to register your first lab.
+                  <td colSpan="5">
+                    <EmptyState
+                      icon={Building2}
+                      title="No laboratories found"
+                      description="Try adjusting your search criteria or register a new laboratory."
+                    />
                   </td>
                 </tr>
               )}
@@ -278,83 +264,75 @@ const ManageLabs = () => {
         </div>
       </div>
 
-      {/* Add Lab Modal */}
-      {showAddModal && (
-        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="bg-[#0f1d38] border border-white/15 rounded-3xl w-full max-w-md p-6 sm:p-7 shadow-2xl relative text-white">
-            <button
-              onClick={() => setShowAddModal(false)}
-              className="absolute top-5 right-5 text-slate-400 hover:text-white"
-            >
-              <X className="w-5 h-5" />
-            </button>
-
-            <div className="flex items-center gap-3.5 mb-5">
-              <div className="w-11 h-11 rounded-2xl bg-cyan-500/15 border border-cyan-400/25 text-cyan-400 flex items-center justify-center">
-                <Building2 className="w-6 h-6" />
-              </div>
-              <div>
-                <h3 className="font-bold text-lg text-white">Add New Laboratory</h3>
-                <p className="text-xs text-slate-400">System will assign a unique identifier</p>
-              </div>
-            </div>
-
-            {error && (
-              <div className="mb-4 p-3 rounded-xl bg-rose-500/15 border border-rose-500/30 text-rose-300 text-xs flex items-center gap-2">
-                <AlertCircle className="w-4 h-4 shrink-0" />
-                <span>{error}</span>
-              </div>
-            )}
-
-            <form onSubmit={handleCreateLab} className="space-y-4">
-              <div>
-                <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">
-                  Laboratory Name
-                </label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. Physics Laboratory 1"
-                  value={labName}
-                  onChange={(e) => setLabName(e.target.value)}
-                  className="w-full bg-[#081124] border border-white/15 rounded-xl px-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400 transition"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">
-                  Block / Building
-                </label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. Block C, 2nd Floor"
-                  value={labBlock}
-                  onChange={(e) => setLabBlock(e.target.value)}
-                  className="w-full bg-[#081124] border border-white/15 rounded-xl px-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400 transition"
-                />
-              </div>
-
-              <div className="pt-3 flex items-center justify-end gap-3">
-                <button
-                  type="button"
-                  onClick={() => setShowAddModal(false)}
-                  className="px-4 py-2 text-xs font-bold text-slate-400 hover:text-white"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={submitLoading}
-                  className="px-5 py-2.5 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 text-white rounded-xl text-xs font-bold shadow-lg shadow-cyan-500/20 transition disabled:opacity-50"
-                >
-                  {submitLoading ? 'Registering...' : 'Create Laboratory'}
-                </button>
-              </div>
-            </form>
+      {/* Add Laboratory Modal */}
+      <Modal
+        isOpen={showAddModal}
+        onClose={() => setShowAddModal(false)}
+        title="Register New Laboratory"
+        subtitle="Create an institutional laboratory facility with an auto-generated unique ID"
+      >
+        {error && (
+          <div className="p-3.5 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs flex items-center gap-2 mb-4">
+            <AlertCircle className="w-4 h-4 shrink-0" />
+            <span>{error}</span>
           </div>
-        </div>
-      )}
+        )}
+
+        <form onSubmit={handleCreateLab} className="space-y-4">
+          <div>
+            <label className="block text-xs font-bold text-[#172033] uppercase tracking-wider mb-1.5">
+              Laboratory Name
+            </label>
+            <input
+              type="text"
+              required
+              placeholder="e.g. Advanced Analog Electronics Lab"
+              value={labName}
+              onChange={(e) => setLabName(e.target.value)}
+              className="w-full bg-[#F7F9F7] border border-[#E5EBE6] rounded-xl px-4 py-2.5 text-sm text-[#172033] placeholder-[#647067]/60 focus:outline-none focus:border-[#087A35] focus:bg-white transition"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold text-[#172033] uppercase tracking-wider mb-1.5">
+              Campus Block / Room Number
+            </label>
+            <input
+              type="text"
+              required
+              placeholder="e.g. Science Block B, Room 204"
+              value={labBlock}
+              onChange={(e) => setLabBlock(e.target.value)}
+              className="w-full bg-[#F7F9F7] border border-[#E5EBE6] rounded-xl px-4 py-2.5 text-sm text-[#172033] placeholder-[#647067]/60 focus:outline-none focus:border-[#087A35] focus:bg-white transition"
+            />
+          </div>
+
+          <div className="pt-2 flex items-center justify-end gap-3">
+            <button
+              type="button"
+              onClick={() => setShowAddModal(false)}
+              className="px-4 py-2.5 rounded-xl text-xs font-bold text-[#647067] hover:bg-slate-100 transition"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={submitLoading}
+              className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#087A35] hover:bg-[#075C2B] text-white rounded-xl text-xs font-bold transition shadow-sm disabled:opacity-50"
+            >
+              {submitLoading ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Creating...
+                </>
+              ) : (
+                'Save Laboratory'
+              )}
+            </button>
+          </div>
+        </form>
+      </Modal>
+
     </div>
   );
 };

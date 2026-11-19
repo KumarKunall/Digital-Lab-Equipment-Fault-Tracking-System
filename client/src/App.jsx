@@ -34,8 +34,11 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#080F20] text-xs font-semibold text-slate-400">
-        Authenticating session...
+      <div className="min-h-screen flex items-center justify-center bg-[#F7F9F7]">
+        <div className="p-6 bg-white border border-[#E5EBE6] rounded-2xl shadow-sm text-center flex flex-col items-center gap-3">
+          <div className="w-8 h-8 border-3 border-[#087A35] border-t-transparent rounded-full animate-spin" />
+          <p className="text-xs font-semibold text-[#647067]">Authenticating session...</p>
+        </div>
       </div>
     );
   }
