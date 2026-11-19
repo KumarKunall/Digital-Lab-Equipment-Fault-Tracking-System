@@ -64,18 +64,6 @@ const globalLimiter = rateLimit({
     message: 'Too many requests from this IP, please try again after 15 minutes.'
   }
 });
-app.get('/api/v1/health', (req, res) => {
-  const dbState = mongoose.connection.readyState;
-  const dbStatus = ['disconnected', 'connected', 'connecting', 'disconnecting'][dbState] || 'unknown';
-  res.status(dbState === 1 ? 200 : 503).json({
-    status: dbState === 1 ? 'online' : 'degraded',
-    database: dbStatus,
-    timestamp: new Date().toISOString(),
-    service: 'LabTrack Pro — Lab Equipment Calibration & Fault Tracking API',
-    version: '1.0.0',
-    ...(dbState !== 1 && { hint: 'Database not connected. Please whitelist IP in MongoDB Atlas → Security → Network Access → Add 0.0.0.0/0' })
-  });
-});
 app.use('/api/', globalLimiter);
 
 // ── Auth-specific Rate Limiter — brute-force protection on login ──────────
@@ -89,18 +77,6 @@ const authLimiter = rateLimit({
     success: false,
     message: 'Too many login attempts. Your IP has been temporarily blocked. Try again in 15 minutes.'
   }
-});
-app.get('/api/v1/health', (req, res) => {
-  const dbState = mongoose.connection.readyState;
-  const dbStatus = ['disconnected', 'connected', 'connecting', 'disconnecting'][dbState] || 'unknown';
-  res.status(dbState === 1 ? 200 : 503).json({
-    status: dbState === 1 ? 'online' : 'degraded',
-    database: dbStatus,
-    timestamp: new Date().toISOString(),
-    service: 'LabTrack Pro — Lab Equipment Calibration & Fault Tracking API',
-    version: '1.0.0',
-    ...(dbState !== 1 && { hint: 'Database not connected. Please whitelist IP in MongoDB Atlas → Security → Network Access → Add 0.0.0.0/0' })
-  });
 });
 
 // ── Health check endpoint (always available, even without DB) ──────────────
@@ -118,30 +94,6 @@ app.get('/api/health', (req, res) => {
       hint: 'Database not connected. Please whitelist your IP in MongoDB Atlas → Security → Network Access → Add 0.0.0.0/0'
     })
   });
-app.get('/api/v1/health', (req, res) => {
-  const dbState = mongoose.connection.readyState;
-  const dbStatus = ['disconnected', 'connected', 'connecting', 'disconnecting'][dbState] || 'unknown';
-  res.status(dbState === 1 ? 200 : 503).json({
-    status: dbState === 1 ? 'online' : 'degraded',
-    database: dbStatus,
-    timestamp: new Date().toISOString(),
-    service: 'LabTrack Pro — Lab Equipment Calibration & Fault Tracking API',
-    version: '1.0.0',
-    ...(dbState !== 1 && { hint: 'Database not connected. Please whitelist IP in MongoDB Atlas → Security → Network Access → Add 0.0.0.0/0' })
-  });
-});
-});
-app.get('/api/v1/health', (req, res) => {
-  const dbState = mongoose.connection.readyState;
-  const dbStatus = ['disconnected', 'connected', 'connecting', 'disconnecting'][dbState] || 'unknown';
-  res.status(dbState === 1 ? 200 : 503).json({
-    status: dbState === 1 ? 'online' : 'degraded',
-    database: dbStatus,
-    timestamp: new Date().toISOString(),
-    service: 'LabTrack Pro — Lab Equipment Calibration & Fault Tracking API',
-    version: '1.0.0',
-    ...(dbState !== 1 && { hint: 'Database not connected. Please whitelist IP in MongoDB Atlas → Security → Network Access → Add 0.0.0.0/0' })
-  });
 });
 
 // ── DB Readiness Guard — return 503 instead of a cryptic crash ─────────────
@@ -152,18 +104,6 @@ const requireDB = (req, res, next) => {
       message: 'Database not connected. The server is running but cannot reach MongoDB Atlas.',
       hint: 'Go to https://cloud.mongodb.com → Security → Network Access → Add IP Address → Allow Access From Anywhere (0.0.0.0/0). Then restart the server.'
     });
-app.get('/api/v1/health', (req, res) => {
-  const dbState = mongoose.connection.readyState;
-  const dbStatus = ['disconnected', 'connected', 'connecting', 'disconnecting'][dbState] || 'unknown';
-  res.status(dbState === 1 ? 200 : 503).json({
-    status: dbState === 1 ? 'online' : 'degraded',
-    database: dbStatus,
-    timestamp: new Date().toISOString(),
-    service: 'LabTrack Pro — Lab Equipment Calibration & Fault Tracking API',
-    version: '1.0.0',
-    ...(dbState !== 1 && { hint: 'Database not connected. Please whitelist IP in MongoDB Atlas → Security → Network Access → Add 0.0.0.0/0' })
-  });
-});
   }
   next();
 };
